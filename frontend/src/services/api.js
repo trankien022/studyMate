@@ -58,6 +58,7 @@ export const aiAPI = {
   getHistory: (roomId, page = 1, limit = 10) => api.get(`/ai/history/${roomId}?page=${page}&limit=${limit}`),
   getConversation: (id) => api.get(`/ai/conversation/${id}`),
   deleteConversation: (id) => api.delete(`/ai/conversation/${id}`),
+  explainQuiz: (data) => api.post('/ai/explain-quiz', data),
 };
 
 /* ─── Quiz ─────────────────────────────────────────────── */
@@ -68,6 +69,7 @@ export const quizAPI = {
   submit: (id, answers) => api.post(`/quiz/${id}/submit`, { answers }),
   getResults: (id) => api.get(`/quiz/${id}/results`),
   delete: (id) => api.delete(`/quiz/${id}`),
+  getAnalytics: (roomId) => api.get(`/quiz/analytics/${roomId}`),
 };
 
 export default api;

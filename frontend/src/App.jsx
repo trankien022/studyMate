@@ -1,11 +1,13 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import LoginPage from './pages/Auth/LoginPage';
 import RegisterPage from './pages/Auth/RegisterPage';
 import DashboardPage from './pages/Dashboard/DashboardPage';
 import RoomPage from './pages/Room/RoomPage';
 import ProfilePage from './pages/Profile/ProfilePage';
+import QuizSharePage from './pages/Quiz/QuizSharePage';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -79,6 +81,14 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/quiz-share/:id"
+        element={
+          <ProtectedRoute>
+            <QuizSharePage />
+          </ProtectedRoute>
+        }
+      />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
@@ -86,17 +96,19 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Toaster position="top-right" toastOptions={{
-          style: {
-            background: '#1a1a2e',
-            color: '#fff',
-            border: '1px solid #16213e'
-          }
-        }} />
-        <AppRoutes />
-      </AuthProvider>
-    </BrowserRouter>
+    <ThemeProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <Toaster position="top-right" toastOptions={{
+            style: {
+              background: 'var(--color-bg-card)',
+              color: 'var(--color-text-primary)',
+              border: '1px solid var(--color-border)'
+            }
+          }} />
+          <AppRoutes />
+        </AuthProvider>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }

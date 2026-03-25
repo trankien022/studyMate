@@ -3,15 +3,19 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { roomAPI } from '../../services/api';
 import { socketService } from '../../services/socket';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { toast } from 'react-hot-toast';
 import {
   ArrowLeft, Users, Hash, Copy, Check,
-  MessageSquare, MessageCircle, FileText, Brain, LogOut, Trash2
+  MessageSquare, MessageCircle, FileText, Brain, LogOut, Trash2,
+  Sun, Moon, Timer, BarChart3
 } from 'lucide-react';
 import ChatTab from './tabs/ChatTab';
 import GroupChatTab from './tabs/GroupChatTab';
 import NotesTab from './tabs/NotesTab';
 import QuizTab from './tabs/QuizTab';
+import PomodoroTimer from './tabs/PomodoroTimer';
+import AnalyticsTab from './tabs/AnalyticsTab';
 import './Room.css';
 import '../Profile/Profile.css';
 
@@ -20,12 +24,15 @@ const TABS = [
   { id: 'chat', label: 'Chat AI', icon: MessageSquare },
   { id: 'notes', label: 'Ghi chú', icon: FileText },
   { id: 'quiz', label: 'Quiz', icon: Brain },
+  { id: 'pomodoro', label: 'Pomodoro', icon: Timer },
+  { id: 'analytics', label: 'Thống kê', icon: BarChart3 },
 ];
 
 export default function RoomPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [room, setRoom] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('group_chat');
@@ -228,6 +235,16 @@ export default function RoomPage() {
               <span>Rời phòng</span>
             </button>
           )}
+
+          <button
+            id="room-theme-toggle"
+            className="btn btn-ghost theme-toggle-btn"
+            onClick={toggleTheme}
+            title={theme === 'dark' ? 'Chế độ sáng' : 'Chế độ tối'}
+          >
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+            <span>{theme === 'dark' ? 'Sáng' : 'Tối'}</span>
+          </button>
         </div>
       </aside>
 
@@ -302,6 +319,8 @@ export default function RoomPage() {
           {activeTab === 'chat' && <ChatTab roomId={id} />}
           {activeTab === 'notes' && <NotesTab roomId={id} room={room} onUpdate={fetchRoom} />}
           {activeTab === 'quiz' && <QuizTab roomId={id} />}
+          {activeTab === 'pomodoro' && <PomodoroTimer />}
+          {activeTab === 'analytics' && <AnalyticsTab roomId={id} />}
         </div>
       </main>
 

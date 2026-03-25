@@ -317,6 +317,116 @@ const deleteQuiz = async (req, res) => {
   });
 };
 
+/**
+ * GET /api/quiz/analytics/:roomId
+ * Thống kê học tập của phòng.
+ */
+const getQuizAnalytics = async (req, res) => {
+  const { roomId } = req.params;
+
+  // Kiểm tra membership
+  await checkRoomMembership(roomId, req.user._id);
+
+  // Tổng quiz trong phòng
+  const totalQuizzes = await Quiz.countDocuments({ roomId });
+
+  // Tổng lần làm bài
+  const quizIds = await Quiz.find({ roomId }).select('_id topic');
+  const quizIdList = quizIds.map((q) => q._id);
+
+  const totalAttempts = await QuizResult.countDocuments({ quizId: { $in: quizIdList } });
+
+  // Điểm trung bình
+  const avgResult = await QuizResult.aggregate([
+    { $match: { quizId: { $in: quizIdList } } },
+    {
+      $group: {
+        _id: null,
+        avgPercentage: { $avg: { $multiply: [{ $divide: ['$score', '$total'] }, 100] } },
+        maxPercentage: { $max: { $multiply: [{ $divide: ['$score', '$total'] }, 100] } },
+      },
+    },
+  ]);
+
+  const avgScore = avgResult.length > 0 ? Math.round(avgResult[0].avgPercentage) : 0;
+  const highestScore = avgResult.length > 0 ? Math.round(avgResult[0].maxPercentage) : 0;
+
+  // Lịch sử quiz (user hiện tại)
+  const userResults = await QuizResult.find({
+    quizId: { $in: quizIdList },
+    userId: req.user._id,
+  })
+    .populate('quizId', 'topic')
+    .sort({ createdAt: -1 })
+    .limit(10);
+
+  const quizHistory = userResults.map((r) => ({
+    topic: r.quizId?.topic || 'N/A',
+    score: r.score,
+    total: r.total,
+    percentage: Math.round((r.score / r.total) * 100),
+    date: r.createdAt,
+  }));
+
+  // Top performers (tất cả thành viên)
+  const topPerformersAgg = await QuizResult.aggregate([
+    { $match: { quizId: { $in: quizIdList } } },
+    {
+      $group: {
+        _id: '$userId',
+        avgScore: { $avg: { $multiply: [{ $divide: ['$score', '$total'] }, 100] } },
+        totalAttempts: { $sum: 1 },
+      },
+    },
+    { $sort: { avgScore: -1 } },
+    { $limit: 10 },
+  ]);
+
+  // Populate user names
+  const User = require('../models/User');
+  const topPerformers = await Promise.all(
+    topPerformersAgg.map(async (p) => {
+      const u = await User.findById(p._id).select('name');
+      return {
+        name: u?.name || 'N/A',
+        avgScore: Math.round(p.avgScore),
+        totalAttempts: p.totalAttempts,
+      };
+    })
+  );
+
+  // Hoạt động gần đây
+  const recentResults = await QuizResult.find({ quizId: { $in: quizIdList } })
+    .populate('userId', 'name')
+    .populate('quizId', 'topic')
+    .sort({ createdAt: -1 })
+    .limit(10);
+
+  const recentActivity = recentResults.map((r) => ({
+    userName: r.userId?.name || 'N/A',
+    topic: r.quizId?.topic || 'N/A',
+    score: r.score,
+    total: r.total,
+    percentage: Math.round((r.score / r.total) * 100),
+    submittedAt: r.createdAt,
+  }));
+
+  res.json({
+    success: true,
+    data: {
+      overview: {
+        totalQuizzes,
+        totalAttempts,
+        avgScore,
+        highestScore,
+      },
+      quizHistory,
+      topPerformers,
+      recentActivity,
+    },
+  });
+};
+
 module.exports = {
   generateQuiz,
   getQuizzesByRoom,
@@ -324,4 +434,5 @@ module.exports = {
   submitQuiz,
   getQuizResults,
   deleteQuiz,
+  getQuizAnalytics,
 };

@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
-import { quizAPI } from '../../../services/api';
+import { quizAPI, aiAPI } from '../../../services/api';
+import FlashcardMode from './FlashcardMode';
 import {
   Brain, Plus, ArrowLeft, ArrowRight,
-  CheckCircle, XCircle, Trophy, Clock, User, Trash2, RefreshCw
+  CheckCircle, XCircle, Trophy, Clock, User, Trash2, RefreshCw,
+  Download, Layers, Share2, Sparkles, Loader, Copy, Check
 } from 'lucide-react';
 
 const LETTERS = ['A', 'B', 'C', 'D'];
@@ -29,6 +31,17 @@ export default function QuizTab({ roomId }) {
   const [leaderboard, setLeaderboard] = useState([]);
   const [submitting, setSubmitting] = useState(false);
 
+  // Flashcard mode
+  const [flashcardMode, setFlashcardMode] = useState(false);
+  const [flashcardQuestions, setFlashcardQuestions] = useState([]);
+
+  // AI explain
+  const [explaining, setExplaining] = useState(null); // index of question being explained
+  const [deepExplanations, setDeepExplanations] = useState({});
+
+  // Share
+  const [copiedShareLink, setCopiedShareLink] = useState(false);
+
   const fetchQuizzes = useCallback(async (pageNum = 1) => {
     if (pageNum === 1) setLoading(true);
     else setLoadingMore(true);
@@ -52,8 +65,6 @@ export default function QuizTab({ roomId }) {
   useEffect(() => {
     fetchQuizzes();
   }, [fetchQuizzes]);
-
-
 
   const handleLoadMore = () => {
     const nextPage = page + 1;
@@ -95,6 +106,7 @@ export default function QuizTab({ roomId }) {
 
   const openQuiz = async (quizId) => {
     setActiveQuiz(quizId);
+    setDeepExplanations({});
     try {
       const { data } = await quizAPI.getDetail(quizId);
       setQuizDetail(data.data.quiz);
@@ -103,7 +115,6 @@ export default function QuizTab({ roomId }) {
       const len = data.data.quiz.questions.length;
       setAnswers(data.data.result ? data.data.result.answers : new Array(len).fill(-1));
 
-      // If already submitted, load results
       if (data.data.submitted) {
         loadLeaderboard(quizId);
       }
@@ -135,10 +146,8 @@ export default function QuizTab({ roomId }) {
     try {
       const { data } = await quizAPI.submit(activeQuiz, answers);
       setResult(data.data.result);
-      // details available in data.data.details if needed
       setSubmitted(true);
       loadLeaderboard(activeQuiz);
-      // Reload quiz detail to get correct answers
       const detailRes = await quizAPI.getDetail(activeQuiz);
       setQuizDetail(detailRes.data.data.quiz);
       toast.success('Nộp bài thành công!');
@@ -150,12 +159,11 @@ export default function QuizTab({ roomId }) {
   };
 
   const handleRetry = async () => {
-    // Reset answers
     const len = quizDetail.questions.length;
     setAnswers(new Array(len).fill(-1));
     setSubmitted(false);
     setResult(null);
-
+    setDeepExplanations({});
     toast('Hãy chọn lại đáp án và nộp bài nhé!', { icon: '🔄' });
   };
 
@@ -166,7 +174,111 @@ export default function QuizTab({ roomId }) {
     setSubmitted(false);
     setResult(null);
     setLeaderboard([]);
+    setFlashcardMode(false);
+    setDeepExplanations({});
   };
+
+  // ─── #18: Export CSV ──────────────────────────────────────
+  const exportCSV = () => {
+    if (!leaderboard.length) return;
+
+    const headers = ['Hạng', 'Tên', 'Điểm', 'Tổng câu', 'Phần trăm', 'Ngày nộp'];
+    const rows = leaderboard.map((entry) => [
+      entry.rank,
+      entry.user?.name || 'N/A',
+      entry.score,
+      entry.total,
+      `${entry.percentage}%`,
+      new Date(entry.submittedAt).toLocaleDateString('vi-VN'),
+    ]);
+
+    const csvContent = [headers, ...rows]
+      .map((row) => row.map((cell) => `"${cell}"`).join(','))
+      .join('\n');
+
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `quiz-${quizDetail.topic}-results.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success('Đã tải file CSV!');
+  };
+
+  // ─── #19: Flashcard Mode ──────────────────────────────────
+  const enterFlashcardMode = async (quizId) => {
+    try {
+      const { data } = await quizAPI.getDetail(quizId);
+      const quiz = data.data.quiz;
+      // Only show flashcards if quiz has been submitted (so we have answers)
+      if (data.data.submitted) {
+        setFlashcardQuestions(quiz.questions);
+        setFlashcardMode(true);
+        setActiveQuiz(quizId);
+        setQuizDetail(quiz);
+      } else {
+        toast('Hãy làm quiz trước, sau đó dùng flashcard để ôn tập!', { icon: '📝' });
+      }
+    } catch {
+      toast.error('Không thể tải quiz cho flashcard');
+    }
+  };
+
+  const enterFlashcardFromDetail = () => {
+    if (quizDetail && submitted) {
+      setFlashcardQuestions(quizDetail.questions);
+      setFlashcardMode(true);
+    }
+  };
+
+  // ─── #21: AI Deep Explain ─────────────────────────────────
+  const handleAIExplain = async (qi) => {
+    if (deepExplanations[qi]) return; // Already explained
+    setExplaining(qi);
+    try {
+      const q = quizDetail.questions[qi];
+      const { data } = await aiAPI.explainQuiz({
+        question: q.question,
+        options: q.options,
+        correctIndex: q.correctIndex,
+        userAnswer: answers[qi],
+        roomId,
+      });
+      setDeepExplanations((prev) => ({ ...prev, [qi]: data.data.explanation }));
+    } catch {
+      toast.error('Lỗi khi AI giải thích');
+    } finally {
+      setExplaining(null);
+    }
+  };
+
+  // ─── #22: Share Quiz ──────────────────────────────────────
+  const shareQuiz = async (quizId) => {
+    const shareUrl = `${window.location.origin}/quiz-share/${quizId}`;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopiedShareLink(true);
+      setTimeout(() => setCopiedShareLink(false), 2000);
+      toast.success('Đã sao chép link chia sẻ quiz!');
+    } catch {
+      // Fallback
+      toast(shareUrl, { duration: 5000, icon: '🔗' });
+    }
+  };
+
+  // ─── Flashcard View ───────────────────────────────────────
+  if (flashcardMode && flashcardQuestions.length > 0) {
+    return (
+      <div className="quiz-tab animate-fade-in">
+        <FlashcardMode
+          questions={flashcardQuestions}
+          onClose={() => setFlashcardMode(false)}
+        />
+      </div>
+    );
+  }
 
   // ─── Quiz Detail View ──────────────────────────────────
   if (activeQuiz && quizDetail) {
@@ -183,21 +295,43 @@ export default function QuizTab({ roomId }) {
               </button>
               <h2>{quizDetail.topic}</h2>
             </div>
-            <div className="quiz-progress">
-              <span>
-                {submitted
-                  ? `${result?.score}/${result?.total} câu đúng`
-                  : `${answeredCount}/${totalQuestions}`}
-              </span>
-              <div className="quiz-progress-bar">
-                <div
-                  className="quiz-progress-fill"
-                  style={{
-                    width: `${submitted
-                      ? (result?.score / result?.total) * 100
-                      : (answeredCount / totalQuestions) * 100}%`
-                  }}
-                />
+            <div className="quiz-detail-actions">
+              {submitted && (
+                <>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={enterFlashcardFromDetail}
+                    title="Chế độ Flashcard"
+                  >
+                    <Layers size={16} />
+                    <span className="hide-mobile">Flashcard</span>
+                  </button>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => shareQuiz(activeQuiz)}
+                    title="Chia sẻ quiz"
+                  >
+                    {copiedShareLink ? <Check size={16} /> : <Share2 size={16} />}
+                    <span className="hide-mobile">Chia sẻ</span>
+                  </button>
+                </>
+              )}
+              <div className="quiz-progress">
+                <span>
+                  {submitted
+                    ? `${result?.score}/${result?.total} câu đúng`
+                    : `${answeredCount}/${totalQuestions}`}
+                </span>
+                <div className="quiz-progress-bar">
+                  <div
+                    className="quiz-progress-fill"
+                    style={{
+                      width: `${submitted
+                        ? (result?.score / result?.total) * 100
+                        : (answeredCount / totalQuestions) * 100}%`
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -224,6 +358,7 @@ export default function QuizTab({ roomId }) {
 
           {/* Questions */}
           {quizDetail.questions.map((q, qi) => {
+            const userAnswerWrong = submitted && q.correctIndex !== undefined && answers[qi] !== q.correctIndex;
             return (
               <div key={qi} className="question-card">
                 <div className="question-number">Câu {qi + 1}</div>
@@ -254,12 +389,39 @@ export default function QuizTab({ roomId }) {
                 {submitted && q.explanation && (
                   <div className="explanation">💡 {q.explanation}</div>
                 )}
+
+                {/* #21: AI Deep Explain button */}
+                {submitted && userAnswerWrong && (
+                  <div className="ai-explain-section">
+                    {!deepExplanations[qi] ? (
+                      <button
+                        className="btn btn-ghost btn-sm ai-explain-btn"
+                        onClick={() => handleAIExplain(qi)}
+                        disabled={explaining === qi}
+                      >
+                        {explaining === qi ? (
+                          <><Loader size={14} className="spin-animation" /> Đang phân tích...</>
+                        ) : (
+                          <><Sparkles size={14} /> AI giải thích chi tiết</>
+                        )}
+                      </button>
+                    ) : (
+                      <div className="ai-deep-explanation animate-fade-in">
+                        <div className="ai-explain-header">
+                          <Sparkles size={14} />
+                          <span>AI Giải thích sâu</span>
+                        </div>
+                        <div className="ai-explain-content">{deepExplanations[qi]}</div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
 
           {/* Submit/Retry button */}
-          <div className="quiz-submit-area" style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+          <div className="quiz-submit-area" style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
             {!submitted ? (
               <button
                 id="submit-quiz-btn"
@@ -277,24 +439,43 @@ export default function QuizTab({ roomId }) {
                 )}
               </button>
             ) : (
-              <button
-                id="retry-quiz-btn"
-                className="btn btn-secondary btn-lg"
-                onClick={handleRetry}
-              >
-                <RefreshCw size={18} />
-                Làm lại Quiz
-              </button>
+              <>
+                <button
+                  id="retry-quiz-btn"
+                  className="btn btn-secondary btn-lg"
+                  onClick={handleRetry}
+                >
+                  <RefreshCw size={18} />
+                  Làm lại Quiz
+                </button>
+                <button
+                  className="btn btn-ghost btn-lg"
+                  onClick={enterFlashcardFromDetail}
+                >
+                  <Layers size={18} />
+                  Ôn bằng Flashcard
+                </button>
+              </>
             )}
           </div>
 
           {/* Leaderboard */}
           {submitted && leaderboard.length > 0 && (
             <div className="leaderboard animate-fade-in">
-              <h3>
-                <Trophy size={16} style={{ marginRight: 8, verticalAlign: 'middle' }} />
-                Bảng xếp hạng
-              </h3>
+              <div className="leaderboard-header">
+                <h3>
+                  <Trophy size={16} style={{ marginRight: 8, verticalAlign: 'middle' }} />
+                  Bảng xếp hạng
+                </h3>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={exportCSV}
+                  title="Xuất CSV"
+                >
+                  <Download size={14} />
+                  <span className="hide-mobile">Xuất CSV</span>
+                </button>
+              </div>
               <div className="leaderboard-list">
                 {leaderboard.map((entry) => (
                   <div key={entry.rank} className="leaderboard-item">
@@ -412,6 +593,20 @@ export default function QuizTab({ roomId }) {
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <button
+                    className="btn-icon-sm"
+                    title="Flashcard"
+                    onClick={(e) => { e.stopPropagation(); enterFlashcardMode(quiz._id); }}
+                  >
+                    <Layers size={16} />
+                  </button>
+                  <button
+                    className="btn-icon-sm"
+                    title="Chia sẻ"
+                    onClick={(e) => { e.stopPropagation(); shareQuiz(quiz._id); }}
+                  >
+                    <Share2 size={16} />
+                  </button>
                   <button
                     className="btn-icon-sm"
                     title="Xóa quiz"

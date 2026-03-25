@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { roomAPI } from '../../services/api';
 import {
   Plus, Users, BookOpen, LogOut, Hash,
-  ArrowRight, Clock, Search, UserPlus, Trash2, Settings
+  ArrowRight, Clock, Search, UserPlus, Trash2, Settings,
+  Sun, Moon
 } from 'lucide-react';
 import './Dashboard.css';
 import '../Profile/Profile.css';
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -156,6 +159,14 @@ export default function DashboardPage() {
             </div>
             <span className="user-name">{user?.name}</span>
           </div>
+          <button
+            id="theme-toggle-btn"
+            className="btn btn-ghost btn-icon"
+            onClick={toggleTheme}
+            title={theme === 'dark' ? 'Chuyển sang sáng' : 'Chuyển sang tối'}
+          >
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
           <button
             id="profile-btn"
             className="btn btn-ghost btn-icon"

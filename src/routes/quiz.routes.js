@@ -7,6 +7,7 @@ const {
   submitQuiz,
   getQuizResults,
   deleteQuiz,
+  getQuizAnalytics,
 } = require('../controllers/quiz.controller');
 const auth = require('../middleware/auth');
 const asyncHandler = require('../middleware/asyncHandler');
@@ -21,6 +22,7 @@ router.get('/detail/:id', asyncHandler(getQuizDetail));
 router.post('/:id/submit', asyncHandler(submitQuiz));
 router.get('/:id/results', asyncHandler(getQuizResults));
 router.delete('/:id', asyncHandler(deleteQuiz));
+router.get('/analytics/:roomId', asyncHandler(getQuizAnalytics));
 router.get('/:roomId', asyncHandler(getQuizzesByRoom));
 
 module.exports = router;

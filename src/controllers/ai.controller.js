@@ -198,4 +198,37 @@ const deleteConversation = async (req, res) => {
   });
 };
 
-module.exports = { chatWithAI, summarizeText, getChatHistory, getConversation, deleteConversation };
+/**
+ * POST /api/ai/explain-quiz
+ * AI giải thích chi tiết câu hỏi quiz.
+ * Body: { question, options, correctIndex, userAnswer, roomId }
+ */
+const explainQuiz = async (req, res) => {
+  const { question, options, correctIndex, userAnswer, roomId } = req.body;
+
+  if (!question || !options || correctIndex === undefined || userAnswer === undefined) {
+    return res.status(400).json({
+      success: false,
+      message: 'Vui lòng cung cấp đủ thông tin câu hỏi',
+    });
+  }
+
+  // Kiểm tra membership nếu có roomId
+  if (roomId) {
+    await checkRoomMembership(roomId, req.user._id);
+  }
+
+  const explanation = await aiService.explainQuizAnswer({
+    question,
+    options,
+    correctIndex,
+    userAnswer,
+  });
+
+  res.json({
+    success: true,
+    data: { explanation },
+  });
+};
+
+module.exports = { chatWithAI, summarizeText, getChatHistory, getConversation, deleteConversation, explainQuiz };

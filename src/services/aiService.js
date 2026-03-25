@@ -161,4 +161,35 @@ CHI TRA VE JSON ARRAY, KHONG CO MARKDOWN, KHONG CO BACKTICK.`;
   }));
 };
 
-module.exports = { chat, summarize, generateQuiz };
+/**
+ * Giải thích chi tiết câu hỏi quiz bằng AI.
+ * @param {Object} params - { question, options, correctIndex, userAnswer }
+ * @returns {string} Giải thích chi tiết
+ */
+const explainQuizAnswer = async ({ question, options, correctIndex, userAnswer }) => {
+  const aiModel = getModel();
+  const LETTERS = ['A', 'B', 'C', 'D'];
+
+  const prompt = `Hãy giải thích chi tiết câu hỏi trắc nghiệm này cho sinh viên:
+
+Câu hỏi: ${question}
+
+Các đáp án:
+${options.map((opt, i) => `${LETTERS[i]}. ${opt}`).join('\n')}
+
+Đáp án đúng: ${LETTERS[correctIndex]}. ${options[correctIndex]}
+Đáp án sinh viên chọn: ${LETTERS[userAnswer]}. ${options[userAnswer]}
+
+Yêu cầu:
+1. Giải thích TẠI SAO đáp án đúng là đúng (dẫn chứng, lý thuyết)
+2. Giải thích tại sao đáp án sinh viên chọn là sai
+3. Mẹo ghi nhớ hoặc cách phân biệt
+4. Kiến thức liên quan cần nắm
+
+Trả lời ngắn gọn, dễ hiểu, bằng tiếng Việt.`;
+
+  const result = await aiModel.generateContent(prompt);
+  return result.response.text();
+};
+
+module.exports = { chat, summarize, generateQuiz, explainQuizAnswer };
