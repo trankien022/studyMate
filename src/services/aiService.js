@@ -278,4 +278,100 @@ CHỈ TRẢ VỀ JSON ARRAY, KHÔNG CÓ MARKDOWN, KHÔNG CÓ BACKTICK.`;
   }));
 };
 
-module.exports = { chat, summarize, generateQuiz, explainQuizAnswer, generateStudySuggestions };
+/**
+ * Phân tích tài liệu bằng AI — tóm tắt, rút key points, gợi ý quiz topics.
+ * @param {string} text - Nội dung text đã trích xuất từ tài liệu
+ * @param {string} fileName - Tên file gốc
+ * @returns {Object} { summary, keyPoints, suggestedQuizTopics }
+ */
+const analyzeDocument = async (text, fileName) => {
+  const aiModel = getModel();
+
+  // Giới hạn text gửi cho AI để tránh vượt context window
+  const truncatedText = text.length > 30000 ? text.substring(0, 30000) + '\n\n[... nội dung bị cắt bớt ...]' : text;
+
+  const prompt = `Bạn là trợ lý phân tích tài liệu học thuật. Hãy phân tích tài liệu "${fileName}" dưới đây.
+
+Nội dung tài liệu:
+"""
+${truncatedText}
+"""
+
+Yêu cầu phân tích:
+1. Tóm tắt nội dung chính (200-400 từ)
+2. Liệt kê 5-10 ý chính quan trọng nhất
+3. Gợi ý 3-5 chủ đề có thể tạo quiz từ tài liệu này
+
+Trả về ĐÚNG format JSON sau, KHÔNG thêm bất kỳ text nào khác:
+{
+  "summary": "Tóm tắt nội dung...",
+  "keyPoints": ["Ý chính 1", "Ý chính 2", "..."],
+  "suggestedQuizTopics": ["Chủ đề quiz 1", "Chủ đề quiz 2", "..."]
+}
+
+CHỈ TRẢ VỀ JSON OBJECT, KHÔNG CÓ MARKDOWN, KHÔNG CÓ BACKTICK.`;
+
+  const result = await aiModel.generateContent(prompt);
+  let responseText = result.response.text().trim();
+
+  // Loại bỏ markdown code block nếu AI vẫn thêm
+  responseText = responseText
+    .replace(/^```json?\s*/i, '')
+    .replace(/```\s*$/i, '')
+    .trim();
+
+  let analysis;
+  try {
+    analysis = JSON.parse(responseText);
+  } catch {
+    // Fallback nếu AI trả format không hợp lệ
+    return {
+      summary: 'Không thể phân tích tài liệu tự động. Vui lòng thử lại.',
+      keyPoints: [],
+      suggestedQuizTopics: [],
+    };
+  }
+
+  return {
+    summary: (analysis.summary || '').substring(0, 2000),
+    keyPoints: Array.isArray(analysis.keyPoints) ? analysis.keyPoints.slice(0, 10) : [],
+    suggestedQuizTopics: Array.isArray(analysis.suggestedQuizTopics) ? analysis.suggestedQuizTopics.slice(0, 5) : [],
+  };
+};
+
+/**
+ * Hỏi đáp về nội dung tài liệu bằng AI.
+ * @param {string} documentText - Nội dung text của tài liệu
+ * @param {string} question - Câu hỏi của user
+ * @param {Array} history - Lịch sử hỏi đáp [{role, content}]
+ * @returns {string} Câu trả lời của AI
+ */
+const askAboutDocument = async (documentText, question, history = []) => {
+  const aiModel = getModel();
+
+  const truncatedText = documentText.length > 20000 ? documentText.substring(0, 20000) + '\n[... cắt bớt ...]' : documentText;
+
+  const chatHistory = history.map((msg) => ({
+    role: msg.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: msg.content }],
+  }));
+
+  // Thêm context tài liệu vào system message
+  const contextMessage = {
+    role: 'user',
+    parts: [{ text: `Đây là nội dung tài liệu học tập, hãy dựa vào đây để trả lời câu hỏi:\n\n"""${truncatedText}"""\n\nHãy trả lời câu hỏi dựa trên nội dung tài liệu bên trên. Nếu câu hỏi không liên quan đến tài liệu, hãy nói rõ.` }],
+  };
+
+  const modelAck = {
+    role: 'model',
+    parts: [{ text: 'Tôi đã đọc tài liệu. Hãy hỏi tôi bất cứ điều gì về nội dung này.' }],
+  };
+
+  const fullHistory = [contextMessage, modelAck, ...chatHistory];
+
+  const chatSession = aiModel.startChat({ history: fullHistory });
+  const result = await chatSession.sendMessage(question);
+  return result.response.text();
+};
+
+module.exports = { chat, summarize, generateQuiz, explainQuizAnswer, generateStudySuggestions, analyzeDocument, askAboutDocument };

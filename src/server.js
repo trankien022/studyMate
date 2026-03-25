@@ -12,6 +12,8 @@ const aiRoutes = require('./routes/ai.routes');
 const quizRoutes = require('./routes/quiz.routes');
 const paymentRoutes = require('./routes/payment.routes');
 const notificationRoutes = require('./routes/notification.routes');
+const dmRoutes = require('./routes/dm.routes');
+const documentRoutes = require('./routes/document.routes');
 
 const app = express();
 
@@ -35,6 +37,12 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/quiz', quizRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/dm', dmRoutes);
+app.use('/api/documents', documentRoutes);
+
+// Serve uploaded files (static)
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // ─── 404 Handler ─────────────────────────────────────────
 app.use((req, res) => {

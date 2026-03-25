@@ -89,4 +89,36 @@ export const notificationAPI = {
   clearAll: () => api.delete('/notifications/clear'),
 };
 
+/* ─── Direct Messaging ─────────────────────────────────── */
+export const dmAPI = {
+  getContacts: () => api.get('/dm/contacts'),
+  getConversations: () => api.get('/dm/conversations'),
+  getMessages: (partnerId, page = 1, limit = 50) =>
+    api.get(`/dm/messages/${partnerId}?page=${page}&limit=${limit}`),
+  sendMessage: (receiverId, content) =>
+    api.post('/dm/send', { receiverId, content }),
+  getUnreadTotal: () => api.get('/dm/unread-total'),
+  markRead: (partnerId) => api.patch(`/dm/read/${partnerId}`),
+};
+
+/* ─── Documents ────────────────────────────────────────── */
+export const documentAPI = {
+  upload: (file, roomId) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('roomId', roomId);
+    return api.post('/documents/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  getByRoom: (roomId, page = 1, limit = 12) =>
+    api.get(`/documents/${roomId}?page=${page}&limit=${limit}`),
+  getDetail: (id) => api.get(`/documents/detail/${id}`),
+  retry: (id) => api.post(`/documents/${id}/retry`),
+  analyze: (id) => api.post(`/documents/${id}/analyze`),
+  ask: (id, question, history) =>
+    api.post(`/documents/${id}/ask`, { question, history }),
+  delete: (id) => api.delete(`/documents/${id}`),
+};
+
 export default api;

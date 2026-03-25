@@ -7,7 +7,7 @@ import {
   Plus, Users, BookOpen, LogOut, Hash,
   ArrowRight, Clock, Search, UserPlus, Trash2, Settings,
   Crown, Layers, Pin, PinOff, SortAsc, ChevronDown,
-  Zap, Sparkles, RefreshCw, AlertCircle
+  Zap, Sparkles, RefreshCw, AlertCircle, MessageSquare
 } from 'lucide-react';
 import './Dashboard.css';
 import '../Profile/Profile.css';
@@ -304,6 +304,15 @@ export default function DashboardPage() {
             aria-label="Cài đặt tài khoản"
           >
             <Settings size={17} />
+          </button>
+          <button
+            id="dm-btn"
+            className="btn btn-ghost btn-icon"
+            onClick={() => navigate('/dm')}
+            title="Tin nhắn riêng"
+            aria-label="Tin nhắn riêng"
+          >
+            <MessageSquare size={17} />
           </button>
           <button
             id="upgrade-btn"

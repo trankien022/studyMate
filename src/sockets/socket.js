@@ -49,6 +49,14 @@ const initSocket = (server) => {
       socket.to(roomId).emit('receive_message', message);
     });
 
+    // ─── DM typing indicator ──────────────────────────
+    socket.on('dm_typing', ({ partnerId, isTyping, userId }) => {
+      io.to(`user_${partnerId}`).emit('dm_partner_typing', {
+        userId,
+        isTyping,
+      });
+    });
+
     // ─── Disconnect ───────────────────────────────────
     socket.on('disconnect', () => {
       console.log(`[Socket] Ngắt kết nối: ${socket.id}`);

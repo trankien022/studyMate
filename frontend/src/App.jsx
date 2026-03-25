@@ -11,6 +11,7 @@ import ProfilePage from './pages/Profile/ProfilePage';
 import QuizSharePage from './pages/Quiz/QuizSharePage';
 import PricingPage from './pages/Pricing/PricingPage';
 import PaymentReturnPage from './pages/Payment/PaymentReturnPage';
+import DirectMessagePage from './pages/DirectMessage/DirectMessagePage';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -105,6 +106,22 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <PaymentReturnPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dm"
+        element={
+          <ProtectedRoute>
+            <DirectMessagePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dm/:partnerId"
+        element={
+          <ProtectedRoute>
+            <DirectMessagePage />
           </ProtectedRoute>
         }
       />
