@@ -121,4 +121,16 @@ export const documentAPI = {
   delete: (id) => api.delete(`/documents/${id}`),
 };
 
+/* ─── Tasks (Kanban Board) ─────────────────────────────── */
+export const taskAPI = {
+  getByRoom: (roomId) => api.get(`/tasks/${roomId}`),
+  create: (data) => api.post('/tasks', data),
+  update: (id, data) => api.patch(`/tasks/${id}`, data),
+  updateStatus: (id, status, order) =>
+    api.patch(`/tasks/${id}/status`, { status, order }),
+  reorder: (roomId, tasks) =>
+    api.patch('/tasks/reorder', { roomId, tasks }),
+  delete: (id) => api.delete(`/tasks/${id}`),
+};
+
 export default api;

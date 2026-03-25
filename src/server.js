@@ -14,6 +14,7 @@ const paymentRoutes = require('./routes/payment.routes');
 const notificationRoutes = require('./routes/notification.routes');
 const dmRoutes = require('./routes/dm.routes');
 const documentRoutes = require('./routes/document.routes');
+const taskRoutes = require('./routes/task.routes');
 
 const app = express();
 
@@ -39,6 +40,7 @@ app.use('/api/payment', paymentRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/dm', dmRoutes);
 app.use('/api/documents', documentRoutes);
+app.use('/api/tasks', taskRoutes);
 
 // Serve uploaded files (static)
 const path = require('path');

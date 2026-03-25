@@ -49,6 +49,19 @@ const initSocket = (server) => {
       socket.to(roomId).emit('receive_message', message);
     });
 
+    // ─── Task Board events ─────────────────────────────
+    socket.on('task_created', ({ roomId, task }) => {
+      socket.to(roomId).emit('task_board_updated', { action: 'created', task });
+    });
+
+    socket.on('task_updated', ({ roomId, task }) => {
+      socket.to(roomId).emit('task_board_updated', { action: 'updated', task });
+    });
+
+    socket.on('task_deleted', ({ roomId, taskId }) => {
+      socket.to(roomId).emit('task_board_updated', { action: 'deleted', taskId });
+    });
+
     // ─── DM typing indicator ──────────────────────────
     socket.on('dm_typing', ({ partnerId, isTyping, userId }) => {
       io.to(`user_${partnerId}`).emit('dm_partner_typing', {

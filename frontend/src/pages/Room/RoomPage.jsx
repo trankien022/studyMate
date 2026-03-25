@@ -8,7 +8,7 @@ import { toast } from 'react-hot-toast';
 import {
   ArrowLeft, Users, Hash, Copy, Check,
   MessageSquare, MessageCircle, FileText, Brain, LogOut, Trash2,
-  Timer, BarChart3, FolderUp
+  Timer, BarChart3, FolderUp, ClipboardList
 } from 'lucide-react';
 import ChatTab from './tabs/ChatTab';
 import GroupChatTab from './tabs/GroupChatTab';
@@ -17,6 +17,7 @@ import QuizTab from './tabs/QuizTab';
 import PomodoroTimer from './tabs/PomodoroTimer';
 import AnalyticsTab from './tabs/AnalyticsTab';
 import DocumentTab from './tabs/DocumentTab';
+import TaskBoardTab from './tabs/TaskBoardTab';
 import './Room.css';
 import '../Profile/Profile.css';
 import NotificationBell from '../../components/NotificationBell/NotificationBell';
@@ -25,6 +26,7 @@ const TABS = [
   { id: 'group_chat', label: 'Nhóm', icon: MessageCircle },
   { id: 'chat', label: 'Chat AI', icon: MessageSquare },
   { id: 'notes', label: 'Ghi chú', icon: FileText },
+  { id: 'tasks', label: 'Công việc', icon: ClipboardList },
   { id: 'quiz', label: 'Quiz', icon: Brain },
   { id: 'documents', label: 'Tài liệu', icon: FolderUp },
   { id: 'pomodoro', label: 'Pomodoro', icon: Timer },
@@ -316,6 +318,7 @@ export default function RoomPage() {
           {activeTab === 'group_chat' && <GroupChatTab roomId={id} />}
           {activeTab === 'chat' && <ChatTab roomId={id} />}
           {activeTab === 'notes' && <NotesTab roomId={id} room={room} onUpdate={fetchRoom} />}
+          {activeTab === 'tasks' && <TaskBoardTab roomId={id} />}
           {activeTab === 'quiz' && <QuizTab roomId={id} />}
           {activeTab === 'documents' && <DocumentTab roomId={id} />}
           {activeTab === 'pomodoro' && <PomodoroTimer />}
