@@ -1,0 +1,27 @@
+registry: https://github.com/HoangNguyen0403/agent-skills-standard
+agents:
+  - antigravity
+skills:
+  react:
+    ref: react-v1.3.0
+    exclude:
+      - react-styling
+      - react-state-management
+      - react-testing
+  typescript:
+    ref: typescript-v1.3.0
+  javascript:
+    ref: javascript-v1.3.0
+  common:
+    ref: common-v1.9.0
+    exclude:
+      - common-observability
+      - common-mobile-animation
+      - common-mobile-ux-core
+      - common-ui-design
+custom_overrides: []
+workflows:
+  - code-review
+  - codebase-review
+  - plan-feature
+  - skill-benchmark

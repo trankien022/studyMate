@@ -1,0 +1,16 @@
+
+F:\du an hoc tap\frontend\src\pages\Room\RoomPage.jsx
+  80:6  warning  React Hook useEffect has a missing dependency: 'fetchRoom'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+F:\du an hoc tap\frontend\src\pages\Room\tabs\ChatTab.jsx
+  26:6  warning  React Hook useEffect has a missing dependency: 'fetchHistory'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+F:\du an hoc tap\frontend\src\pages\Room\tabs\NotesTab.jsx
+  19:6  warning  React Hook useEffect has a missing dependency: 'notes'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+F:\du an hoc tap\frontend\src\pages\Room\tabs\QuizTab.jsx
+  29:10  error    'details' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                          no-unused-vars
+  35:6   warning  React Hook useEffect has a missing dependency: 'fetchQuizzes'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+Γ£û 5 problems (1 error, 4 warnings)
+
