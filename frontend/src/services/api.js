@@ -72,4 +72,10 @@ export const quizAPI = {
   getAnalytics: (roomId) => api.get(`/quiz/analytics/${roomId}`),
 };
 
+/* ─── Payment ──────────────────────────────────────────── */
+export const paymentAPI = {
+  createPaymentUrl: (data) => api.post('/payment/create-url', data),
+  getHistory: () => api.get('/payment/history'),
+};
+
 export default api;

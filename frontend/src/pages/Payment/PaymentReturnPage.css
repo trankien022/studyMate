@@ -1,0 +1,151 @@
+/* ─── Payment Return Page ─────────────────────────────── */
+.payment-return-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Background orbs */
+.payment-return-bg-orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.12;
+  pointer-events: none;
+}
+.payment-return-bg-orb-1 {
+  width: 500px;
+  height: 500px;
+  background: var(--color-primary);
+  top: -15%;
+  right: -10%;
+}
+.payment-return-bg-orb-2 {
+  width: 400px;
+  height: 400px;
+  background: #10b981;
+  bottom: -10%;
+  left: -5%;
+}
+
+/* Card */
+.payment-return-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 1.5rem;
+  padding: 3rem 2.5rem;
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+}
+
+/* Loading state */
+.payment-status-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+.payment-status-loading h2 {
+  font-size: 1.3rem;
+  color: var(--color-text-primary);
+}
+.payment-status-loading p {
+  color: var(--color-text-secondary);
+}
+
+/* Icon wrappers */
+.payment-icon-wrapper {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  animation: payment-icon-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.payment-icon-success {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+}
+.payment-icon-failed {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+}
+
+@keyframes payment-icon-pop {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Status content */
+.payment-status-success h2,
+.payment-status-failed h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 0.5rem;
+}
+.payment-msg {
+  color: var(--color-text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+/* Transaction details */
+.payment-details {
+  background: var(--color-bg-elevated, rgba(0, 0, 0, 0.02));
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+.payment-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+}
+.payment-detail-row:not(:last-child) {
+  border-bottom: 1px solid var(--color-border);
+}
+.payment-detail-row span {
+  color: var(--color-text-secondary);
+}
+.payment-detail-row strong {
+  color: var(--color-text-primary);
+}
+.premium-text {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #f59e0b !important;
+}
+
+/* Actions */
+.payment-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.payment-actions .btn {
+  min-width: 160px;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+  .payment-return-card {
+    padding: 2rem 1.5rem;
+  }
+}

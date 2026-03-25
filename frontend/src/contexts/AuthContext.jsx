@@ -66,8 +66,20 @@ export function AuthProvider({ children }) {
     return data;
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const { data } = await authAPI.getMe();
+      setUser(data.data.user);
+      localStorage.setItem('user', JSON.stringify(data.data.user));
+    } catch {
+      // Ignore errors
+    }
+  }, []);
+
+  const isPremium = user?.isPremium && user?.premiumExpiry && new Date(user.premiumExpiry) > new Date();
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateProfile, changePassword }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateProfile, changePassword, refreshUser, isPremium }}>
       {children}
     </AuthContext.Provider>
   );

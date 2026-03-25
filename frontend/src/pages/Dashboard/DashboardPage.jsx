@@ -1,19 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { useTheme } from '../../contexts/ThemeContext';
+
 import { roomAPI } from '../../services/api';
 import {
   Plus, Users, BookOpen, LogOut, Hash,
   ArrowRight, Clock, Search, UserPlus, Trash2, Settings,
-  Sun, Moon
+  Crown, Layers
 } from 'lucide-react';
 import './Dashboard.css';
 import '../Profile/Profile.css';
 
 export default function DashboardPage() {
-  const { user, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { user, logout, isPremium } = useAuth();
+
   const navigate = useNavigate();
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -69,7 +69,6 @@ export default function DashboardPage() {
     e.preventDefault();
     setError('');
 
-    // Frontend validation
     if (!createForm.name || createForm.name.trim().length < 2) {
       setError('Tên phòng phải có ít nhất 2 ký tự');
       return;
@@ -97,7 +96,6 @@ export default function DashboardPage() {
     e.preventDefault();
     setError('');
 
-    // Frontend validation
     if (!joinCode || joinCode.trim().length !== 8) {
       setError('Mã mời phải có đúng 8 ký tự');
       return;
@@ -117,9 +115,17 @@ export default function DashboardPage() {
     }
   };
 
-  const filteredRooms = rooms.filter((r) =>
-    r.name.toLowerCase().includes(search.toLowerCase()) ||
-    r.subject.toLowerCase().includes(search.toLowerCase())
+  const filteredRooms = useMemo(() =>
+    rooms.filter((r) =>
+      r.name.toLowerCase().includes(search.toLowerCase()) ||
+      r.subject.toLowerCase().includes(search.toLowerCase())
+    ),
+    [rooms, search]
+  );
+
+  const totalMembers = useMemo(() =>
+    rooms.reduce((sum, r) => sum + (r.members?.length || 0), 0),
+    [rooms]
   );
 
   const handleLogout = () => {
@@ -142,13 +148,28 @@ export default function DashboardPage() {
     }
   };
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Chào buổi sáng';
+    if (hour < 18) return 'Chào buổi chiều';
+    return 'Chào buổi tối';
+  };
+
   return (
     <div className="dashboard">
-      {/* Header */}
-      <header className="dashboard-header glass">
+      {/* ── Animated Background ──────────────────────── */}
+      <div className="dashboard-bg" aria-hidden="true">
+        <div className="dashboard-bg-orb dashboard-bg-orb-1" />
+        <div className="dashboard-bg-orb dashboard-bg-orb-2" />
+        <div className="dashboard-bg-orb dashboard-bg-orb-3" />
+        <div className="dashboard-bg-mesh" />
+      </div>
+
+      {/* ── Header ───────────────────────────────────── */}
+      <header className="dashboard-header" role="banner">
         <div className="dashboard-header-left">
           <div className="dashboard-logo">
-            <BookOpen size={24} />
+            <BookOpen size={22} />
             <span>AI StudyMate</span>
           </div>
         </div>
@@ -158,40 +179,49 @@ export default function DashboardPage() {
               {user?.name?.charAt(0).toUpperCase()}
             </div>
             <span className="user-name">{user?.name}</span>
+            {isPremium && (
+              <span className="premium-badge" title="Tài khoản Premium">
+                <Crown size={10} />
+                PRO
+              </span>
+            )}
           </div>
-          <button
-            id="theme-toggle-btn"
-            className="btn btn-ghost btn-icon"
-            onClick={toggleTheme}
-            title={theme === 'dark' ? 'Chuyển sang sáng' : 'Chuyển sang tối'}
-          >
-            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
           <button
             id="profile-btn"
             className="btn btn-ghost btn-icon"
             onClick={() => navigate('/profile')}
             title="Cài đặt tài khoản"
+            aria-label="Cài đặt tài khoản"
           >
-            <Settings size={18} />
+            <Settings size={17} />
+          </button>
+          <button
+            id="upgrade-btn"
+            className="btn-upgrade"
+            onClick={() => navigate('/pricing')}
+            title={isPremium ? 'Xem gói Premium' : 'Nâng cấp Premium'}
+          >
+            <Crown size={15} />
+            <span className="upgrade-text">{isPremium ? 'Xem gói' : 'Nâng cấp'}</span>
           </button>
           <button
             id="logout-btn"
             className="btn btn-ghost btn-icon"
             onClick={handleLogout}
             title="Đăng xuất"
+            aria-label="Đăng xuất"
           >
-            <LogOut size={18} />
+            <LogOut size={17} />
           </button>
         </div>
       </header>
 
       <main className="dashboard-main">
-        {/* Welcome section */}
-        <section className="dashboard-welcome animate-fade-in">
+        {/* ── Welcome Section ─────────────────────────── */}
+        <section className="dashboard-welcome animate-fade-in" aria-label="Welcome">
           <div className="welcome-text">
             <h1>
-              Xin chào, <span className="gradient-text">{user?.name}</span> 👋
+              {getGreeting()}, <span className="gradient-text">{user?.name}</span>
             </h1>
             <p>Hôm nay bạn muốn học gì?</p>
           </div>
@@ -201,23 +231,56 @@ export default function DashboardPage() {
               className="btn btn-primary"
               onClick={() => { setShowCreate(true); setShowJoin(false); setError(''); }}
             >
-              <Plus size={18} />
-              Tạo phòng mới
+              <Plus size={17} />
+              Tạo phòng
             </button>
             <button
               id="join-room-btn"
               className="btn btn-secondary"
               onClick={() => { setShowJoin(true); setShowCreate(false); setError(''); }}
             >
-              <UserPlus size={18} />
-              Tham gia phòng
+              <UserPlus size={17} />
+              Tham gia
             </button>
           </div>
         </section>
 
-        {/* Create / Join modal-like inline form */}
+        {/* ── Quick Stats ─────────────────────────────── */}
+        {!loading && rooms.length > 0 && (
+          <div className="dashboard-stats animate-fade-in">
+            <div className="stat-card">
+              <div className="stat-icon stat-icon-rooms">
+                <Layers size={20} />
+              </div>
+              <div className="stat-info">
+                <span className="stat-value">{rooms.length}</span>
+                <span className="stat-label">Phòng học</span>
+              </div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon stat-icon-members">
+                <Users size={20} />
+              </div>
+              <div className="stat-info">
+                <span className="stat-value">{totalMembers}</span>
+                <span className="stat-label">Tổng thành viên</span>
+              </div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon stat-icon-premium">
+                <Crown size={20} />
+              </div>
+              <div className="stat-info">
+                <span className="stat-value">{isPremium ? 'Active' : 'Free'}</span>
+                <span className="stat-label">Gói hiện tại</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Create / Join Form ──────────────────────── */}
         {(showCreate || showJoin) && (
-          <div className="dashboard-modal-card card animate-fade-in-up">
+          <div className="dashboard-modal-card animate-fade-in-up">
             {showCreate && (
               <form onSubmit={handleCreate} id="create-room-form">
                 <h3>Tạo phòng học mới</h3>
@@ -288,24 +351,30 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Search bar */}
+        {/* ── Search + Room Label ──────────────────────── */}
         {rooms.length > 0 && (
-          <div className="dashboard-search animate-fade-in">
-            <Search size={18} className="search-icon" />
-            <input
-              id="search-rooms"
-              type="text"
-              className="input"
-              placeholder="Tìm kiếm phòng học..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={{ paddingLeft: '2.5rem' }}
-            />
-          </div>
+          <>
+            <div className="section-label">
+              <h2>Phòng học của bạn</h2>
+              <span className="room-count">{rooms.length} phòng</span>
+            </div>
+            <div className="dashboard-search animate-fade-in">
+              <Search size={17} className="search-icon" />
+              <input
+                id="search-rooms"
+                type="text"
+                className="input"
+                placeholder="Tìm kiếm phòng học..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                aria-label="Tìm kiếm phòng học"
+              />
+            </div>
+          </>
         )}
 
-        {/* Room cards */}
-        <section className="rooms-grid stagger-children">
+        {/* ── Room Cards ──────────────────────────────── */}
+        <section className="rooms-grid stagger-children" aria-label="Room list">
           {loading
             ? Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="room-card-skeleton">
@@ -317,7 +386,7 @@ export default function DashboardPage() {
             : filteredRooms.map((room) => (
                 <article
                   key={room._id}
-                  className="room-card card"
+                  className="room-card"
                   onClick={() => navigate(`/room/${room._id}`)}
                   role="button"
                   tabIndex={0}
@@ -325,7 +394,7 @@ export default function DashboardPage() {
                 >
                   <div className="room-card-header">
                     <div className="room-card-icon">
-                      <BookOpen size={20} />
+                      <BookOpen size={19} />
                     </div>
                     <div className="room-card-actions">
                       <span className="badge">{room.subject}</span>
@@ -334,8 +403,9 @@ export default function DashboardPage() {
                           className="btn-icon-sm"
                           title="Xóa phòng"
                           onClick={(e) => { e.stopPropagation(); setDeleteConfirm(room); }}
+                          aria-label={`Xóa phòng ${room.name}`}
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={15} />
                         </button>
                       )}
                     </div>
@@ -343,20 +413,20 @@ export default function DashboardPage() {
                   <h3 className="room-card-title">{room.name}</h3>
                   <div className="room-card-meta">
                     <span className="meta-item">
-                      <Users size={14} />
+                      <Users size={13} />
                       {room.members?.length || 0} thành viên
                     </span>
                     <span className="meta-item">
-                      <Hash size={14} />
+                      <Hash size={13} />
                       {room.inviteCode}
                     </span>
                   </div>
                   <div className="room-card-footer">
                     <span className="meta-item">
-                      <Clock size={14} />
+                      <Clock size={13} />
                       {new Date(room.updatedAt).toLocaleDateString('vi-VN')}
                     </span>
-                    <ArrowRight size={16} className="room-card-arrow" />
+                    <ArrowRight size={15} className="room-card-arrow" />
                   </div>
                 </article>
               ))
@@ -364,7 +434,7 @@ export default function DashboardPage() {
 
           {!loading && filteredRooms.length === 0 && rooms.length > 0 && (
             <div className="empty-state animate-fade-in">
-              <Search size={48} />
+              <Search size={44} />
               <h3>Không tìm thấy phòng nào</h3>
               <p>Thử từ khóa khác hoặc tạo phòng mới</p>
             </div>
@@ -372,7 +442,7 @@ export default function DashboardPage() {
 
           {!loading && rooms.length === 0 && (
             <div className="empty-state animate-fade-in">
-              <BookOpen size={48} />
+              <BookOpen size={44} />
               <h3>Chưa có phòng học nào</h3>
               <p>Tạo phòng mới hoặc tham gia bằng mã mời để bắt đầu!</p>
             </div>
@@ -380,10 +450,10 @@ export default function DashboardPage() {
         </section>
 
         {hasMore && filteredRooms.length > 0 && search === '' && (
-          <div className="load-more-container" style={{ textAlign: 'center', marginTop: '2rem' }}>
-            <button 
-              className="btn btn-secondary" 
-              onClick={loadMore} 
+          <div className="load-more-container">
+            <button
+              className="btn btn-secondary"
+              onClick={loadMore}
               disabled={loadingMore}
             >
               {loadingMore ? <span className="spinner" /> : 'Tải thêm...'}
@@ -392,11 +462,17 @@ export default function DashboardPage() {
         )}
       </main>
 
-      {/* Delete confirmation dialog */}
+      {/* ── Delete Confirmation Dialog ────────────────── */}
       {deleteConfirm && (
-        <div className="confirm-overlay" onClick={() => !deleting && setDeleteConfirm(null)}>
+        <div
+          className="confirm-overlay"
+          onClick={() => !deleting && setDeleteConfirm(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Xóa phòng ${deleteConfirm.name}`}
+        >
           <div className="confirm-dialog" onClick={(e) => e.stopPropagation()}>
-            <h3>Xóa phòng "{deleteConfirm.name}"?</h3>
+            <h3>Xóa phòng &quot;{deleteConfirm.name}&quot;?</h3>
             <p>
               Toàn bộ dữ liệu của phòng (chat AI, ghi chú, quiz, kết quả) sẽ bị xóa vĩnh viễn.
               Hành động này không thể hoàn tác.
@@ -417,7 +493,7 @@ export default function DashboardPage() {
               >
                 {deleting ? <span className="spinner" /> : (
                   <>
-                    <Trash2 size={16} />
+                    <Trash2 size={15} />
                     Xóa phòng
                   </>
                 )}

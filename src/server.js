@@ -10,6 +10,7 @@ const authRoutes = require('./routes/auth.routes');
 const roomRoutes = require('./routes/room.routes');
 const aiRoutes = require('./routes/ai.routes');
 const quizRoutes = require('./routes/quiz.routes');
+const paymentRoutes = require('./routes/payment.routes');
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/quiz', quizRoutes);
+app.use('/api/payment', paymentRoutes);
 
 // ─── 404 Handler ─────────────────────────────────────────
 app.use((req, res) => {

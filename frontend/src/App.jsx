@@ -8,6 +8,8 @@ import DashboardPage from './pages/Dashboard/DashboardPage';
 import RoomPage from './pages/Room/RoomPage';
 import ProfilePage from './pages/Profile/ProfilePage';
 import QuizSharePage from './pages/Quiz/QuizSharePage';
+import PricingPage from './pages/Pricing/PricingPage';
+import PaymentReturnPage from './pages/Payment/PaymentReturnPage';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -86,6 +88,22 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <QuizSharePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pricing"
+        element={
+          <ProtectedRoute>
+            <PricingPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/payment/vnpay-return"
+        element={
+          <ProtectedRoute>
+            <PaymentReturnPage />
           </ProtectedRoute>
         }
       />

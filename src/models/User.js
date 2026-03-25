@@ -28,11 +28,33 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    isPremium: {
+      type: Boolean,
+      default: false,
+    },
+    premiumExpiry: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true, // Tự thêm createdAt, updatedAt
   }
 );
+
+// Kiểm tra premium còn hiệu lực
+userSchema.methods.isPremiumActive = function () {
+  if (!this.isPremium) return false;
+  if (!this.premiumExpiry) return false;
+  if (new Date() > this.premiumExpiry) {
+    // Hết hạn → tự reset
+    this.isPremium = false;
+    this.premiumExpiry = null;
+    this.save();
+    return false;
+  }
+  return true;
+};
 
 // Hash password trước khi save
 userSchema.pre('save', async function () {
