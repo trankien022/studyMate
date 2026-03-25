@@ -1,0 +1,573 @@
+/* ═══════════════════════════════════════════════════════════
+   BadgeShowcase — Huy hiệu & Thành tích
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─── BadgeSummary (compact for Dashboard) ───────────────── */
+.badge-summary-skeleton {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--ds-bg-card, #fff);
+  border-radius: var(--ds-radius-md, 12px);
+  border: 1px solid var(--ds-border, #E2E8F0);
+}
+
+.badge-summary-card {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  padding: 1rem 1.5rem;
+  background: var(--ds-bg-card, #fff);
+  border: 1px solid var(--ds-border, #E2E8F0);
+  border-radius: var(--ds-radius-md, 12px);
+  cursor: pointer;
+  transition: all var(--ds-transition-fast, 150ms ease);
+  font-family: var(--ds-font, sans-serif);
+  text-align: left;
+}
+
+.badge-summary-card:hover {
+  border-color: var(--ds-gold-border, #FDE68A);
+  box-shadow: var(--ds-shadow-md);
+  transform: translateY(-1px);
+}
+
+.badge-summary-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.badge-level-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--ds-radius-full, 9999px);
+  background: linear-gradient(135deg, var(--ds-primary, #1C1917), var(--ds-primary-light, #44403C));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+  gap: 0;
+}
+
+.badge-level-num {
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1;
+  margin-top: -2px;
+}
+
+.badge-summary-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.badge-summary-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ds-text-primary, #0C0A09);
+}
+
+.badge-xp-bar {
+  width: 100px;
+  height: 4px;
+  background: var(--ds-primary-pale, rgba(28,25,23,0.05));
+  border-radius: var(--ds-radius-full, 9999px);
+  overflow: hidden;
+}
+
+.badge-xp-bar-lg {
+  width: 120px;
+  height: 6px;
+}
+
+.badge-xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--ds-gold, #CA8A04), var(--ds-gold-light, #EAB308));
+  border-radius: var(--ds-radius-full, 9999px);
+  transition: width 0.5s ease;
+}
+
+.badge-xp-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ds-text-muted, #78716C);
+}
+
+.badge-summary-recent {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.badge-mini {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--ds-radius-full, 9999px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  background: var(--ds-primary-pale, rgba(28,25,23,0.05));
+  border: 2px solid var(--ds-border, #E2E8F0);
+  transition: transform var(--ds-transition-fast, 150ms ease);
+}
+
+.badge-mini:hover {
+  transform: scale(1.15);
+}
+
+.badge-summary-arrow {
+  color: var(--ds-text-muted, #78716C);
+  flex-shrink: 0;
+}
+
+/* ─── Rarity colors ───────────────────────────────────────── */
+.badge-rarity-common {
+  --badge-color: #64748b;
+}
+
+.badge-rarity-rare {
+  --badge-color: #3b82f6;
+}
+
+.badge-rarity-epic {
+  --badge-color: #8b5cf6;
+}
+
+.badge-rarity-legendary {
+  --badge-color: #f59e0b;
+}
+
+.badge-mini.badge-rarity-rare {
+  border-color: rgba(59, 130, 246, 0.3);
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.badge-mini.badge-rarity-epic {
+  border-color: rgba(139, 92, 246, 0.3);
+  background: rgba(139, 92, 246, 0.08);
+}
+
+.badge-mini.badge-rarity-legendary {
+  border-color: rgba(245, 158, 11, 0.3);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+/* ─── Full BadgeShowcase ─────────────────────────────────── */
+.badge-showcase {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.badge-showcase-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 3rem;
+  color: var(--ds-text-muted, #78716C);
+}
+
+.badge-showcase-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.badge-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--ds-text-primary, #0C0A09);
+}
+
+.badge-header-left h2 {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+/* ─── Unlock Toast ───────────────────────────────────────── */
+.badge-unlock-toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.12), rgba(99, 102, 241, 0.08));
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: var(--ds-radius-md, 12px);
+  color: var(--ds-primary, #1C1917);
+}
+
+.badge-unlock-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.badge-unlock-content strong {
+  font-size: 0.875rem;
+  color: var(--ds-text-primary, #0C0A09);
+}
+
+.badge-unlock-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.badge-unlock-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0.25rem 0.75rem;
+  background: var(--ds-bg-card, #fff);
+  border: 1px solid var(--badge-color, var(--ds-border, #E2E8F0));
+  border-radius: var(--ds-radius-full, 9999px);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--badge-color, var(--ds-text-secondary, #44403C));
+}
+
+/* ─── Stats Row ──────────────────────────────────────────── */
+.badge-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+
+.badge-stat-card {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--ds-bg-card, #fff);
+  border: 1px solid var(--ds-border, #E2E8F0);
+  border-radius: var(--ds-radius-md, 12px);
+  transition: all var(--ds-transition-fast, 150ms ease);
+}
+
+.badge-stat-card:hover {
+  box-shadow: var(--ds-shadow-sm);
+}
+
+.badge-stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--ds-radius-md, 12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #fff;
+}
+
+.badge-stat-level {
+  background: linear-gradient(135deg, var(--ds-primary, #1C1917), var(--ds-primary-light, #44403C));
+}
+
+.badge-stat-collected {
+  background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+}
+
+.badge-stat-xp {
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+}
+
+.badge-stat-rate {
+  background: linear-gradient(135deg, #10b981, #34d399);
+}
+
+.badge-stat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.badge-stat-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ds-text-primary, #0C0A09);
+}
+
+.badge-stat-sub {
+  font-size: 0.75rem;
+  color: var(--ds-text-muted, #78716C);
+  font-weight: 500;
+}
+
+/* ─── Category Filter ────────────────────────────────────── */
+.badge-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  color: var(--ds-text-muted, #78716C);
+}
+
+.badge-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0.25rem 0.75rem;
+  background: var(--ds-primary-pale, rgba(28,25,23,0.05));
+  border: 1px solid var(--ds-border, #E2E8F0);
+  border-radius: var(--ds-radius-full, 9999px);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--ds-text-secondary, #44403C);
+  cursor: pointer;
+  transition: all var(--ds-transition-fast, 150ms ease);
+  font-family: var(--ds-font, sans-serif);
+}
+
+.badge-filter-chip:hover {
+  border-color: var(--ds-gold-border, #FDE68A);
+}
+
+.badge-filter-chip.active {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: var(--ds-primary, #1C1917);
+  color: var(--ds-primary, #1C1917);
+  font-weight: 600;
+}
+
+/* ─── Badge Grid ─────────────────────────────────────────── */
+.badge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.badge-card {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1.5rem 1rem 1rem;
+  background: var(--ds-bg-card, #fff);
+  border: 1px solid var(--ds-border, #E2E8F0);
+  border-radius: var(--ds-radius-md, 12px);
+  transition: all var(--ds-transition-fast, 150ms ease);
+  overflow: hidden;
+  gap: 0.5rem;
+}
+
+.badge-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--ds-shadow-md);
+}
+
+/* Unlocked styles */
+.badge-card.unlocked {
+  border-color: var(--badge-color, var(--ds-border, #E2E8F0));
+}
+
+.badge-card.unlocked:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05), 0 0 0 1px var(--badge-color);
+}
+
+/* Locked styles */
+.badge-card.locked {
+  opacity: 0.6;
+}
+
+.badge-card.locked:hover {
+  opacity: 0.8;
+}
+
+/* Glow background */
+.badge-glow {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  filter: blur(20px);
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+.badge-glow-common {
+  background: #64748b;
+}
+
+.badge-glow-rare {
+  background: #3b82f6;
+}
+
+.badge-glow-epic {
+  background: #8b5cf6;
+}
+
+.badge-glow-legendary {
+  background: #f59e0b;
+  opacity: 0.3;
+}
+
+/* Badge Icon */
+.badge-card-icon {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--ds-radius-full, 9999px);
+  background: var(--ds-primary-pale, rgba(28,25,23,0.05));
+  border: 2px solid var(--ds-border, #E2E8F0);
+  margin-bottom: 0.25rem;
+}
+
+.badge-card.unlocked .badge-card-icon {
+  border-color: var(--badge-color, var(--ds-border, #E2E8F0));
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.08),
+    rgba(139, 92, 246, 0.04)
+  );
+}
+
+.badge-emoji {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.badge-lock-icon {
+  color: var(--ds-text-muted, #78716C);
+}
+
+/* Card text */
+.badge-card-name {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--ds-text-primary, #0C0A09);
+  line-height: 1.3;
+}
+
+.badge-card-desc {
+  font-size: 0.75rem;
+  color: var(--ds-text-muted, #78716C);
+  line-height: 1.4;
+}
+
+/* Progress */
+.badge-progress-section {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.badge-progress-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--ds-primary-pale, rgba(28,25,23,0.05));
+  border-radius: var(--ds-radius-full, 9999px);
+  overflow: hidden;
+}
+
+.badge-progress-fill {
+  height: 100%;
+  background: var(--badge-color, linear-gradient(135deg, var(--ds-primary, #1C1917), var(--ds-primary-light, #44403C)));
+  border-radius: var(--ds-radius-full, 9999px);
+  transition: width 0.5s ease;
+}
+
+.badge-card.unlocked .badge-progress-fill {
+  background: var(--badge-color, var(--ds-primary, #1C1917));
+}
+
+.badge-progress-text {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ds-text-muted, #78716C);
+  white-space: nowrap;
+  min-width: 28px;
+  text-align: right;
+}
+
+/* Rarity label */
+.badge-rarity-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Unlock date */
+.badge-unlock-date {
+  font-size: 9px;
+  color: var(--ds-text-muted, #78716C);
+}
+
+/* ─── Responsive ─────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .badge-stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .badge-stats-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .badge-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .badge-showcase-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .badge-filter-row {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 0.5rem;
+  }
+
+  .badge-filter-chip {
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .badge-stats-row {
+    grid-template-columns: 1fr;
+  }
+
+  .badge-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .badge-stat-card {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+    padding: 0.75rem;
+  }
+}

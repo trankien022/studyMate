@@ -12,6 +12,8 @@ import QuizSharePage from './pages/Quiz/QuizSharePage';
 import PricingPage from './pages/Pricing/PricingPage';
 import PaymentReturnPage from './pages/Payment/PaymentReturnPage';
 import DirectMessagePage from './pages/DirectMessage/DirectMessagePage';
+import DiscoverPage from './pages/Discover/DiscoverPage';
+import AITutorPage from './pages/AITutor/AITutorPage';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -122,6 +124,22 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <DirectMessagePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/discover"
+        element={
+          <ProtectedRoute>
+            <DiscoverPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tutor"
+        element={
+          <ProtectedRoute>
+            <AITutorPage />
           </ProtectedRoute>
         }
       />

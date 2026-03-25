@@ -5,6 +5,7 @@ const {
   createNotification,
   createBulkNotifications,
 } = require('./notification.controller');
+const { triggerBadgeCheck } = require('./badge.controller');
 
 // ─── Helper: Kiểm tra quyền truy cập task ──────────────────
 const findTaskWithAccess = async (taskId, userId) => {
@@ -97,6 +98,9 @@ const createTask = async (req, res) => {
       }).catch((err) => console.error('[Notification] Error:', err.message));
     }
   }
+
+  // 🏆 Kiểm tra huy hiệu mới
+  triggerBadgeCheck(req.user._id);
 
   // ─── Response ──────────────────────────────────────────
   res.status(201).json({
@@ -275,6 +279,11 @@ const updateTaskStatus = async (req, res) => {
         },
       }).catch((err) => console.error('[Notification] Error:', err.message));
     }
+  }
+
+  // 🏆 Kiểm tra huy hiệu mới khi hoàn thành task
+  if (status === 'done') {
+    triggerBadgeCheck(req.user._id);
   }
 
   res.json({

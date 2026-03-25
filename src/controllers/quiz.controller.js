@@ -5,6 +5,7 @@ const checkRoomMembership = require('../middleware/checkMembership');
 const aiService = require('../services/aiService');
 const { getIO } = require('../sockets/socket');
 const { createBulkNotifications } = require('./notification.controller');
+const { triggerBadgeCheck } = require('./badge.controller');
 
 /**
  * POST /api/quiz/generate
@@ -269,6 +270,9 @@ const submitQuiz = async (req, res) => {
     total: quiz.questions.length,
     answers,
   });
+
+  // 🏆 Kiểm tra huy hiệu mới (fire-and-forget)
+  triggerBadgeCheck(req.user._id);
 
   res.status(201).json({
     success: true,

@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 import { roomAPI, aiAPI } from '../../services/api';
+import { badgeAPI } from '../../services/api';
 import {
   Plus, Users, BookOpen, LogOut, Hash,
   ArrowRight, Clock, Search, UserPlus, Trash2, Settings,
   Crown, Layers, Pin, PinOff, SortAsc, ChevronDown,
-  Zap, Sparkles, RefreshCw, AlertCircle, MessageSquare
+  Zap, Sparkles, RefreshCw, AlertCircle, MessageSquare, Award, Compass, GraduationCap
 } from 'lucide-react';
+import { BadgeSummary } from '../../components/BadgeShowcase/BadgeShowcase';
 import './Dashboard.css';
 import '../Profile/Profile.css';
 import NotificationBell from '../../components/NotificationBell/NotificationBell';
@@ -286,7 +288,11 @@ export default function DashboardPage() {
         <div className="dashboard-header-right">
           <div className="dashboard-user">
             <div className="avatar-circle">
-              {user?.name?.charAt(0).toUpperCase()}
+              {user?.avatar ? (
+                <img src={`http://localhost:5000${user.avatar}`} alt="Avatar" className="avatar-circle-img" />
+              ) : (
+                user?.name?.charAt(0).toUpperCase()
+              )}
             </div>
             <span className="user-name">{user?.name}</span>
             {isPremium && (
@@ -362,8 +368,99 @@ export default function DashboardPage() {
               <UserPlus size={17} />
               Tham gia
             </button>
+            <button
+              id="discover-btn"
+              className="btn btn-secondary"
+              onClick={() => navigate('/discover')}
+              title="Khám phá phòng công khai"
+            >
+              <Compass size={17} />
+              Khám phá
+            </button>
+            <button
+              id="tutor-btn"
+              className="btn btn-secondary"
+              onClick={() => navigate('/tutor')}
+              title="Học với gia sư AI cá nhân hóa"
+            >
+              <GraduationCap size={17} />
+              AI Tutor
+            </button>
           </div>
         </section>
+
+        {/* ── Create / Join Form ──────────────────────── */}
+        {(showCreate || showJoin) && (
+          <div className="dashboard-modal-card animate-fade-in-up">
+            {showCreate && (
+              <form onSubmit={handleCreate} id="create-room-form">
+                <h3>Tạo phòng học mới</h3>
+                {error && <div className="auth-error">{error}</div>}
+                <div className="form-group">
+                  <label htmlFor="room-name">Tên phòng</label>
+                  <input
+                    id="room-name"
+                    type="text"
+                    className="input"
+                    placeholder="VD: Nhóm ôn thi Toán rời rạc"
+                    value={createForm.name}
+                    onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                    required
+                    minLength={2}
+                    maxLength={100}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="room-subject">Môn học</label>
+                  <input
+                    id="room-subject"
+                    type="text"
+                    className="input"
+                    placeholder="VD: Toán rời rạc"
+                    value={createForm.subject}
+                    onChange={(e) => setCreateForm({ ...createForm, subject: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="modal-actions">
+                  <button type="button" className="btn btn-ghost" onClick={() => setShowCreate(false)}>
+                    Hủy
+                  </button>
+                  <button type="submit" className="btn btn-primary" disabled={actionLoading}>
+                    {actionLoading ? <span className="spinner" /> : 'Tạo phòng'}
+                  </button>
+                </div>
+              </form>
+            )}
+            {showJoin && (
+              <form onSubmit={handleJoin} id="join-room-form">
+                <h3>Tham gia bằng mã mời</h3>
+                {error && <div className="auth-error">{error}</div>}
+                <div className="form-group">
+                  <label htmlFor="invite-code">Mã mời</label>
+                  <input
+                    id="invite-code"
+                    type="text"
+                    className="input"
+                    placeholder="VD: A1B2C3D4"
+                    value={joinCode}
+                    onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                    required
+                    style={{ textTransform: 'uppercase', letterSpacing: '0.15em', fontFamily: 'var(--font-mono)' }}
+                  />
+                </div>
+                <div className="modal-actions">
+                  <button type="button" className="btn btn-ghost" onClick={() => setShowJoin(false)}>
+                    Hủy
+                  </button>
+                  <button type="submit" className="btn btn-primary" disabled={actionLoading}>
+                    {actionLoading ? <span className="spinner" /> : 'Tham gia'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        )}
 
         {/* ── Quick Stats ─────────────────────────────── */}
         {!loading && rooms.length > 0 && (
@@ -396,43 +493,6 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-        )}
-
-        {/* ── Quick Resume Cards ──────────────────────── */}
-        {!loading && recentRooms.length > 0 && (
-          <section className="quick-resume-section animate-fade-in" aria-label="Tiếp tục học">
-            <div className="section-label">
-              <Zap size={18} className="section-label-icon" />
-              <h2>Tiếp tục học</h2>
-            </div>
-            <div className="quick-resume-grid">
-              {recentRooms.map((room, idx) => (
-                <button
-                  key={room._id}
-                  className={`quick-resume-card quick-resume-card-${idx + 1}`}
-                  onClick={() => navigateToRoom(room._id)}
-                >
-                  <div className="qr-card-top">
-                    <div className="qr-card-icon">
-                      <BookOpen size={18} />
-                    </div>
-                    <span className="qr-badge">{room.subject}</span>
-                  </div>
-                  <h3 className="qr-card-title">{room.name}</h3>
-                  <div className="qr-card-bottom">
-                    <span className="qr-meta">
-                      <Users size={12} />
-                      {room.members?.length || 0}
-                    </span>
-                    <span className="qr-continue">
-                      Tiếp tục
-                      <ArrowRight size={14} />
-                    </span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </section>
         )}
 
         {/* ── AI Study Suggestions ─────────────────────── */}
@@ -511,78 +571,48 @@ export default function DashboardPage() {
           </section>
         )}
 
-        {/* ── Create / Join Form ──────────────────────── */}
-        {(showCreate || showJoin) && (
-          <div className="dashboard-modal-card animate-fade-in-up">
-            {showCreate && (
-              <form onSubmit={handleCreate} id="create-room-form">
-                <h3>Tạo phòng học mới</h3>
-                {error && <div className="auth-error">{error}</div>}
-                <div className="form-group">
-                  <label htmlFor="room-name">Tên phòng</label>
-                  <input
-                    id="room-name"
-                    type="text"
-                    className="input"
-                    placeholder="VD: Nhóm ôn thi Toán rời rạc"
-                    value={createForm.name}
-                    onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                    required
-                    minLength={2}
-                    maxLength={100}
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="room-subject">Môn học</label>
-                  <input
-                    id="room-subject"
-                    type="text"
-                    className="input"
-                    placeholder="VD: Toán rời rạc"
-                    value={createForm.subject}
-                    onChange={(e) => setCreateForm({ ...createForm, subject: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="modal-actions">
-                  <button type="button" className="btn btn-ghost" onClick={() => setShowCreate(false)}>
-                    Hủy
-                  </button>
-                  <button type="submit" className="btn btn-primary" disabled={actionLoading}>
-                    {actionLoading ? <span className="spinner" /> : 'Tạo phòng'}
-                  </button>
-                </div>
-              </form>
-            )}
-            {showJoin && (
-              <form onSubmit={handleJoin} id="join-room-form">
-                <h3>Tham gia bằng mã mời</h3>
-                {error && <div className="auth-error">{error}</div>}
-                <div className="form-group">
-                  <label htmlFor="invite-code">Mã mời</label>
-                  <input
-                    id="invite-code"
-                    type="text"
-                    className="input"
-                    placeholder="VD: A1B2C3D4"
-                    value={joinCode}
-                    onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                    required
-                    style={{ textTransform: 'uppercase', letterSpacing: '0.15em', fontFamily: 'var(--font-mono)' }}
-                  />
-                </div>
-                <div className="modal-actions">
-                  <button type="button" className="btn btn-ghost" onClick={() => setShowJoin(false)}>
-                    Hủy
-                  </button>
-                  <button type="submit" className="btn btn-primary" disabled={actionLoading}>
-                    {actionLoading ? <span className="spinner" /> : 'Tham gia'}
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
+        {/* ── Quick Resume Cards ──────────────────────── */}
+        {!loading && recentRooms.length > 0 && (
+          <section className="quick-resume-section animate-fade-in" aria-label="Tiếp tục học">
+            <div className="section-label">
+              <Zap size={18} className="section-label-icon" />
+              <h2>Tiếp tục học</h2>
+            </div>
+            <div className="quick-resume-grid">
+              {recentRooms.map((room, idx) => (
+                <button
+                  key={room._id}
+                  className={`quick-resume-card quick-resume-card-${idx + 1}`}
+                  onClick={() => navigateToRoom(room._id)}
+                >
+                  <div className="qr-card-top">
+                    <div className="qr-card-icon">
+                      <BookOpen size={18} />
+                    </div>
+                    <span className="qr-badge">{room.subject}</span>
+                  </div>
+                  <h3 className="qr-card-title">{room.name}</h3>
+                  <div className="qr-card-bottom">
+                    <span className="qr-meta">
+                      <Users size={12} />
+                      {room.members?.length || 0}
+                    </span>
+                    <span className="qr-continue">
+                      Tiếp tục
+                      <ArrowRight size={14} />
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </section>
         )}
+
+
+
+
+
+
 
         {/* ── Search + Room Label + Sort ────────────────── */}
         {rooms.length > 0 && (
@@ -742,6 +772,18 @@ export default function DashboardPage() {
             </button>
           </div>
         )}
+
+        {/* ── Badge Summary ────────────────────────────── */}
+        {!loading && (
+          <section className="badge-summary-section animate-fade-in" style={{ marginTop: "2rem" }} aria-label="Huy hiệu">
+            <div className="section-label">
+              <Award size={18} className="section-label-icon" />
+              <h2>Huy hiệu & Thành tích</h2>
+            </div>
+            <BadgeSummary onClick={() => navigate('/profile')} />
+          </section>
+        )}
+
       </main>
 
       {/* ── Delete Confirmation Dialog ────────────────── */}

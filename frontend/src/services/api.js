@@ -36,6 +36,14 @@ export const authAPI = {
   getMe: () => api.get('/auth/me'),
   updateProfile: (data) => api.put('/auth/profile', data),
   changePassword: (data) => api.put('/auth/change-password', data),
+  uploadAvatar: (file) => {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    return api.post('/auth/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  removeAvatar: () => api.delete('/auth/avatar'),
 };
 
 /* ─── Rooms ────────────────────────────────────────────── */
@@ -49,6 +57,19 @@ export const roomAPI = {
   leave: (id) => api.post(`/rooms/${id}/leave`),
   kickMember: (id, memberId) => api.delete(`/rooms/${id}/members/${memberId}`),
   transferOwnership: (id, newOwnerId) => api.patch(`/rooms/${id}/transfer`, { newOwnerId }),
+  // Public Room Discovery
+  discover: (params = {}) => {
+    const query = new URLSearchParams();
+    if (params.search) query.set('search', params.search);
+    if (params.subject) query.set('subject', params.subject);
+    if (params.sortBy) query.set('sortBy', params.sortBy);
+    if (params.page) query.set('page', params.page);
+    if (params.limit) query.set('limit', params.limit);
+    return api.get(`/rooms/discover?${query.toString()}`);
+  },
+  joinPublic: (id) => api.post(`/rooms/${id}/join-public`),
+  togglePublic: (id, isPublic, description) =>
+    api.patch(`/rooms/${id}/public`, { isPublic, description }),
 };
 
 /* ─── AI ───────────────────────────────────────────────── */
@@ -131,6 +152,31 @@ export const taskAPI = {
   reorder: (roomId, tasks) =>
     api.patch('/tasks/reorder', { roomId, tasks }),
   delete: (id) => api.delete(`/tasks/${id}`),
+};
+
+/* ─── Badges (Hệ thống Huy hiệu) ──────────────────────── */
+export const badgeAPI = {
+  getAll: () => api.get('/badges'),
+  getRecent: () => api.get('/badges/recent'),
+  check: () => api.post('/badges/check'),
+};
+
+/* ─── AI Tutor (Gia sư AI cá nhân hóa) ────────────────── */
+export const tutorAPI = {
+  createSession: (data) => api.post('/tutor/sessions', data),
+  getSessions: (params = {}) => {
+    const query = new URLSearchParams();
+    if (params.status) query.set('status', params.status);
+    if (params.page) query.set('page', params.page);
+    if (params.limit) query.set('limit', params.limit);
+    return api.get(`/tutor/sessions?${query.toString()}`);
+  },
+  getSession: (id) => api.get(`/tutor/sessions/${id}`),
+  deleteSession: (id) => api.delete(`/tutor/sessions/${id}`),
+  chat: (id, message) => api.post(`/tutor/sessions/${id}/chat`, { message }),
+  updateConfig: (id, config) => api.patch(`/tutor/sessions/${id}/config`, config),
+  completeSession: (id) => api.post(`/tutor/sessions/${id}/complete`),
+  getStats: () => api.get('/tutor/stats'),
 };
 
 export default api;

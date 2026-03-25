@@ -20,6 +20,13 @@ const Room = require('./src/models/Room');
 const Conversation = require('./src/models/Conversation');
 const Quiz = require('./src/models/Quiz');
 const QuizResult = require('./src/models/QuizResult');
+const Task = require('./src/models/Task');
+const Document = require('./src/models/Document');
+const Notification = require('./src/models/Notification');
+const DirectMessage = require('./src/models/DirectMessage');
+const Order = require('./src/models/Order');
+const { UserBadge, BADGE_DEFINITIONS } = require('./src/models/Badge');
+const TutorSession = require('./src/models/TutorSession');
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
@@ -513,6 +520,137 @@ async function seed() {
   }
   console.log(`  ✅ Tạo ${resultCount} quiz results\n`);
 
+  // ─── 6. Tạo Tasks (Kanban Board) ─────────────────────
+  console.log('📋 Tạo Tasks...');
+  let taskCount = 0;
+  for (const r of rooms) {
+    const statuses = ['todo', 'in_progress', 'review', 'done'];
+    const priorities = ['low', 'medium', 'high', 'urgent'];
+    for (let i = 0; i < 3; i++) {
+        await Task.create({
+            title: `Nhiệm vụ ôn tập ${i + 1}`,
+            description: `Chi tiết nhiệm vụ ôn tập cho môn ${r.subject}`,
+            roomId: r._id,
+            createdBy: r.owner,
+            assignees: r.members.slice(0, 2),
+            status: statuses[randInt(0, 3)],
+            priority: priorities[randInt(0, 3)]
+        });
+        taskCount++;
+    }
+  }
+  console.log(`  ✅ Tạo ${taskCount} tasks\n`);
+
+  // ─── 7. Tạo Documents ────────────────────────────────
+  console.log('📄 Tạo Documents...');
+  let docCount = 0;
+  for (const r of rooms) {
+    await Document.create({
+        originalName: `Tai_Lieu_${r.subject}.pdf`,
+        fileName: `file_${r._id}_12345.pdf`,
+        mimeType: 'application/pdf',
+        size: 1024000,
+        roomId: r._id,
+        uploadedBy: r.owner,
+        status: 'analyzed',
+        analysis: { summary: 'Tóm tắt tài liệu', keyPoints: ['Điểm 1', 'Điểm 2'] }
+    });
+    docCount++;
+  }
+  console.log(`  ✅ Tạo ${docCount} documents\n`);
+
+  // ─── 8. Tạo Direct Messages & Conversations (1-1) ────
+  console.log('✉️  Tạo Direct Messages...');
+  let dmCount = 0;
+  for (let i = 0; i < 15; i++) { // 15 pairs
+      const u1 = users[randInt(0, 9)];
+      const u2 = users[randInt(10, 29)];
+      const dsId = DirectMessage.getConversationId(u1._id, u2._id);
+      
+      await DirectMessage.create({
+          conversationId: dsId,
+          sender: u1._id,
+          receiver: u2._id,
+          content: `Chào bạn, mình hỏi chút về bài tập nhé!`,
+          isRead: true
+      });
+      await DirectMessage.create({
+          conversationId: dsId,
+          sender: u2._id,
+          receiver: u1._id,
+          content: `Chào bạn, bạn hỏi đi!`,
+          isRead: true
+      });
+      dmCount += 2;
+  }
+  console.log(`  ✅ Tạo ${dmCount} direct messages\n`);
+
+  // ─── 9. Tạo Notifications ─────────────────────────────
+  console.log('🔔 Tạo Notifications...');
+  let notiCount = 0;
+  for (const u of users) {
+      await Notification.create({
+          userId: u._id,
+          type: 'system',
+          title: 'Chào mừng đến với AI StudyMate',
+          message: 'Chúc bạn học tập hiệu quả!',
+          isRead: false
+      });
+      notiCount++;
+  }
+  console.log(`  ✅ Tạo ${notiCount} notifications\n`);
+
+  // ─── 10. Tạo Orders (Premium Payments) ───────────────
+  console.log('💳 Tạo Orders...');
+  let orderCount = 0;
+  for (const idx of premiumIdxs) {
+      const u = users[idx];
+      await Order.create({
+          userId: u._id,
+          orderId: `ORD${Date.now()}${idx}`,
+          amount: 49000,
+          status: 'success',
+          vnpayTransactionNo: '123456789',
+          payDate: '20231010120000',
+      });
+      orderCount++;
+  }
+  console.log(`  ✅ Tạo ${orderCount} orders\n`);
+
+  // ─── 11. Tạo Badges cho Users ────────────────────────
+  console.log('🏅 Tạo Badges...');
+  let badgeCount = 0;
+  for (const u of users) {
+      await UserBadge.create({
+          userId: u._id,
+          badgeCode: 'first_room',
+          unlocked: true,
+          progress: 1,
+          unlockedAt: new Date()
+      });
+      badgeCount++;
+  }
+  console.log(`  ✅ Tạo ${badgeCount} badges\n`);
+
+  // ─── 12. Tạo Tutor Sessions ──────────────────────────
+  console.log('👨‍🏫 Tạo Tutor Sessions...');
+  let tutorCount = 0;
+  for (const u of users) {
+      await TutorSession.create({
+          userId: u._id,
+          subject: 'Lập trình Web',
+          topic: 'React',
+          title: 'Phiên học React cơ bản',
+          status: 'completed',
+          messages: [
+              { role: 'user', content: 'React là gì?' },
+              { role: 'assistant', content: 'React là thư viện JS.' }
+          ]
+      });
+      tutorCount++;
+  }
+  console.log(`  ✅ Tạo ${tutorCount} tutor sessions\n`);
+
   // ═══════════════════════════════════════════════════════
   // Summary
   // ═══════════════════════════════════════════════════════
@@ -525,6 +663,13 @@ async function seed() {
   console.log(`  💬 Conversations:  ${convsData.length}`);
   console.log(`  🧠 Quizzes:        ${quizzes.length}`);
   console.log(`  🏆 Quiz Results:   ${resultCount}`);
+  console.log(`  📋 Tasks:          ${taskCount}`);
+  console.log(`  📄 Documents:      ${docCount}`);
+  console.log(`  ✉️  DMs:           ${dmCount}`);
+  console.log(`  🔔 Notifications:  ${notiCount}`);
+  console.log(`  💳 Orders:         ${orderCount}`);
+  console.log(`  🏅 Badges:         ${badgeCount}`);
+  console.log(`  👨‍🏫 Tutor Sessions: ${tutorCount}`);
 
   console.log(`\n🔑 Tài khoản đăng nhập (tất cả mật khẩu: 123456):`);
   for (const u of USERS_DATA.slice(0, 5)) {

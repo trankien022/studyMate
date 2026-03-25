@@ -30,6 +30,16 @@ const roomSchema = new mongoose.Schema(
         ref: 'User',
       },
     ],
+    description: {
+      type: String,
+      trim: true,
+      maxlength: [500, 'Mô tả phòng không được quá 500 ký tự'],
+      default: '',
+    },
+    isPublic: {
+      type: Boolean,
+      default: false,
+    },
     notes: {
       type: String,
       default: '',

@@ -76,10 +76,26 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  const uploadAvatar = useCallback(async (file) => {
+    const { data } = await authAPI.uploadAvatar(file);
+    const updatedUser = data.data.user;
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    setUser(updatedUser);
+    return data;
+  }, []);
+
+  const removeAvatar = useCallback(async () => {
+    const { data } = await authAPI.removeAvatar();
+    const updatedUser = data.data.user;
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    setUser(updatedUser);
+    return data;
+  }, []);
+
   const isPremium = user?.isPremium && user?.premiumExpiry && new Date(user.premiumExpiry) > new Date();
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateProfile, changePassword, refreshUser, isPremium }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateProfile, changePassword, refreshUser, uploadAvatar, removeAvatar, isPremium }}>
       {children}
     </AuthContext.Provider>
   );

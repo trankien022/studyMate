@@ -1,5 +1,45 @@
 const jwt = require('jsonwebtoken');
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
 const User = require('../models/User');
+
+// ─── Multer Configuration (Avatar Upload) ────────────────────
+const AVATAR_DIR = path.join(__dirname, '..', '..', 'uploads', 'avatars');
+
+// Tạo thư mục avatars nếu chưa có
+if (!fs.existsSync(AVATAR_DIR)) {
+  fs.mkdirSync(AVATAR_DIR, { recursive: true });
+}
+
+const avatarStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, AVATAR_DIR);
+  },
+  filename: (req, file, cb) => {
+    // Tạo tên file unique: userId-timestamp.ext
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, `${req.user._id}-${Date.now()}${ext}`);
+  },
+});
+
+// Chỉ chấp nhận file ảnh
+const avatarFilter = (req, file, cb) => {
+  const allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+  if (allowedMimes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Chỉ hỗ trợ file ảnh JPG, PNG, WebP'));
+  }
+};
+
+const avatarUpload = multer({
+  storage: avatarStorage,
+  fileFilter: avatarFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB max
+  },
+});
 
 /**
  * Tạo JWT token cho user.
@@ -172,6 +212,71 @@ const updateProfile = async (req, res) => {
 };
 
 /**
+ * POST /api/auth/avatar
+ * Upload ảnh đại diện (avatar) cho user hiện tại.
+ * Form-data: avatar (binary file)
+ */
+const uploadAvatar = async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({
+      success: false,
+      message: 'Vui lòng chọn file ảnh đại diện',
+    });
+  }
+
+  const user = await User.findById(req.user._id);
+
+  // Xóa avatar cũ nếu có (tránh file rác)
+  if (user.avatar) {
+    const oldAvatarPath = path.join(__dirname, '..', '..', user.avatar);
+    if (fs.existsSync(oldAvatarPath)) {
+      fs.unlinkSync(oldAvatarPath);
+    }
+  }
+
+  // Lưu đường dẫn tương đối để serve qua static
+  const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+  user.avatar = avatarUrl;
+  await user.save();
+
+  res.json({
+    success: true,
+    message: 'Cập nhật ảnh đại diện thành công',
+    data: { user: user.toJSON() },
+  });
+};
+
+/**
+ * DELETE /api/auth/avatar
+ * Xóa ảnh đại diện, quay về avatar mặc định.
+ */
+const removeAvatar = async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (!user.avatar) {
+    return res.status(400).json({
+      success: false,
+      message: 'Bạn chưa có ảnh đại diện để xóa',
+    });
+  }
+
+  // Xóa file trên disk
+  const avatarPath = path.join(__dirname, '..', '..', user.avatar);
+  if (fs.existsSync(avatarPath)) {
+    fs.unlinkSync(avatarPath);
+  }
+
+  user.avatar = '';
+  await user.save();
+
+  res.json({
+    success: true,
+    message: 'Đã xóa ảnh đại diện',
+    data: { user: user.toJSON() },
+  });
+};
+
+/**
  * PUT /api/auth/change-password
  * Đổi mật khẩu.
  */
@@ -213,4 +318,13 @@ const changePassword = async (req, res) => {
   });
 };
 
-module.exports = { register, login, getMe, updateProfile, changePassword };
+module.exports = {
+  register,
+  login,
+  getMe,
+  updateProfile,
+  uploadAvatar,
+  removeAvatar,
+  avatarUpload, // multer instance cho route
+  changePassword,
+};

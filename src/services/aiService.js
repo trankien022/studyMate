@@ -16,7 +16,7 @@ const getModel = () => {
     }
     genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.1-flash-lite-preview',
       systemInstruction: {
         role: 'user',
         parts: [{ text: SYSTEM_PROMPT }],
@@ -374,4 +374,158 @@ const askAboutDocument = async (documentText, question, history = []) => {
   return result.response.text();
 };
 
-module.exports = { chat, summarize, generateQuiz, explainQuizAnswer, generateStudySuggestions, analyzeDocument, askAboutDocument };
+// ─── AI Tutor cá nhân hóa ──────────────────────────────────
+
+/**
+ * Mapping phong cách học sang prompt instruction.
+ */
+const LEARNING_STYLE_PROMPTS = {
+  visual: 'Sử dụng nhiều sơ đồ, bảng biểu, hình ảnh ASCII art, emoji minh họa. Ưu tiên trình bày trực quan.',
+  'step-by-step': 'Giải thích từng bước một, đánh số rõ ràng. Mỗi bước phải ngắn gọn và dễ theo dõi.',
+  examples: 'Luôn đưa ví dụ cụ thể, thực tế trước khi giải thích lý thuyết. Càng nhiều ví dụ càng tốt.',
+  socratic: 'Dùng phương pháp Socratic — đặt câu hỏi gợi mở để dẫn dắt sinh viên tự suy luận thay vì đưa đáp án trực tiếp.',
+};
+
+/**
+ * Mapping mức độ khó sang prompt instruction.
+ */
+const DIFFICULTY_PROMPTS = {
+  beginner: 'Giải thích ở mức cơ bản nhất, dùng ngôn ngữ đơn giản, tránh thuật ngữ phức tạp. Giống như giải thích cho người mới bắt đầu.',
+  intermediate: 'Giải thích ở mức trung bình, có thể dùng thuật ngữ chuyên ngành nhưng cần define rõ.',
+  advanced: 'Giải thích chuyên sâu, dùng thuật ngữ chính xác, kết nối với các concepts liên quan và ứng dụng nâng cao.',
+};
+
+/**
+ * Chat với AI Tutor cá nhân hóa.
+ * @param {string} message - Tin nhắn của user
+ * @param {Object} config - { subject, topic, difficulty, learningStyle }
+ * @param {Array} history - Lịch sử tin nhắn [{role, content}]
+ * @returns {string} Phản hồi cá nhân hóa của AI Tutor
+ */
+const tutorChat = async (message, config, history = []) => {
+  const aiModel = getModel();
+
+  const { subject, topic, difficulty, learningStyle } = config;
+
+  // Xây dựng system prompt cá nhân hóa
+  const tutorSystemPrompt = `Bạn là AI Tutor cá nhân hóa — gia sư AI chuyên về "${subject}"${topic ? ` (chủ đề: ${topic})` : ''}.
+
+Vai trò:
+- Bạn là gia sư 1-1 kiên nhẫn, thân thiện, và chuyên gia.
+- Nhiệm vụ chính: giúp sinh viên HIỂU sâu, không chỉ biết đáp án.
+- Luôn kiểm tra xem sinh viên đã hiểu chưa bằng câu hỏi follow-up.
+
+Phong cách dạy:
+${LEARNING_STYLE_PROMPTS[learningStyle] || LEARNING_STYLE_PROMPTS['step-by-step']}
+
+Mức độ:
+${DIFFICULTY_PROMPTS[difficulty] || DIFFICULTY_PROMPTS['intermediate']}
+
+Quy tắc:
+- Trả lời bằng tiếng Việt, rõ ràng và có cấu trúc.
+- Sử dụng markdown: headings, bold, code blocks, bullet points.
+- Khi sinh viên trả lời đúng → khen ngợi & đưa câu hỏi nâng cao.
+- Khi sinh viên trả lời sai → giải thích nhẹ nhàng, gợi ý hướng đúng.
+- Cuối mỗi phần giải thích, đề xuất 1-2 câu hỏi liên quan để kiểm tra hiểu biết.
+- Nếu sinh viên lạc đề → nhẹ nhàng đưa về chủ đề chính.
+- Luôn khuyến khích và tạo động lực học.`;
+
+  // Tạo model với system instruction tutor
+  const tutorModel = genAI.getGenerativeModel({
+    model: 'gemini-3.1-flash-lite-preview',
+    systemInstruction: {
+      role: 'user',
+      parts: [{ text: tutorSystemPrompt }],
+    },
+  });
+
+  // Chuyển history sang format Gemini
+  const chatHistory = history.map((msg) => ({
+    role: msg.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: msg.content }],
+  }));
+
+  const chatSession = tutorModel.startChat({
+    history: chatHistory,
+  });
+
+  const result = await chatSession.sendMessage(message);
+  return result.response.text();
+};
+
+/**
+ * Tạo tóm tắt phiên học AI Tutor — phân tích tiến trình và đề xuất.
+ * @param {Object} sessionData - { subject, topic, messages, questionsAsked, questionsCorrect }
+ * @returns {Object} { summary, conceptsCovered, masteryLevel, nextSteps }
+ */
+const generateTutorSummary = async (sessionData) => {
+  const aiModel = getModel();
+
+  const { subject, topic, messages, questionsAsked, questionsCorrect } = sessionData;
+
+  // Chỉ lấy nội dung tin nhắn quan trọng (tối đa 30 tin)
+  const messagesSummary = messages.slice(-30).map((m) => `${m.role === 'user' ? 'Sinh viên' : 'Tutor'}: ${m.content.substring(0, 200)}`).join('\n');
+
+  const prompt = `Phân tích phiên học dưới đây để tạo báo cáo tiến trình học tập.
+
+Môn: ${subject}
+Chủ đề: ${topic || 'Chung'}
+Số câu hỏi đã hỏi: ${questionsAsked || 0}
+Số câu trả lời đúng: ${questionsCorrect || 0}
+
+Nội dung trao đổi:
+"""
+${messagesSummary}
+"""
+
+Trả về ĐÚNG format JSON sau:
+{
+  "summary": "Tóm tắt ngắn gọn phiên học (2-3 câu)",
+  "conceptsCovered": ["Khái niệm 1", "Khái niệm 2"],
+  "masteryLevel": 75,
+  "strengths": ["Điểm mạnh 1"],
+  "weaknesses": ["Điểm cần cải thiện 1"],
+  "nextSteps": ["Bước tiếp theo 1", "Bước tiếp theo 2"]
+}
+
+masteryLevel là số từ 0-100 dựa trên mức hiểu biết thể hiện trong cuộc trò chuyện.
+
+CHỈ TRẢ VỀ JSON OBJECT, KHÔNG CÓ MARKDOWN, KHÔNG CÓ BACKTICK.`;
+
+  const result = await aiModel.generateContent(prompt);
+  let responseText = result.response.text().trim();
+
+  // Loại bỏ markdown code block nếu AI vẫn thêm
+  responseText = responseText
+    .replace(/^```json?\s*/i, '')
+    .replace(/```\s*$/i, '')
+    .trim();
+
+  let analysis;
+  try {
+    analysis = JSON.parse(responseText);
+  } catch {
+    // Fallback nếu AI trả format không hợp lệ
+    return {
+      summary: 'Phiên học đã kết thúc.',
+      conceptsCovered: [],
+      masteryLevel: 0,
+      strengths: [],
+      weaknesses: [],
+      nextSteps: ['Tiếp tục ôn tập để nắm vững kiến thức.'],
+    };
+  }
+
+  return {
+    summary: (analysis.summary || '').substring(0, 500),
+    conceptsCovered: Array.isArray(analysis.conceptsCovered) ? analysis.conceptsCovered.slice(0, 10) : [],
+    masteryLevel: typeof analysis.masteryLevel === 'number'
+      ? Math.max(0, Math.min(100, Math.round(analysis.masteryLevel)))
+      : 0,
+    strengths: Array.isArray(analysis.strengths) ? analysis.strengths.slice(0, 5) : [],
+    weaknesses: Array.isArray(analysis.weaknesses) ? analysis.weaknesses.slice(0, 5) : [],
+    nextSteps: Array.isArray(analysis.nextSteps) ? analysis.nextSteps.slice(0, 5) : [],
+  };
+};
+
+module.exports = { chat, summarize, generateQuiz, explainQuizAnswer, generateStudySuggestions, analyzeDocument, askAboutDocument, tutorChat, generateTutorSummary };
