@@ -29,15 +29,15 @@ const getModel = () => {
 /**
  * System prompt mặc định cho AI StudyMate.
  */
-const SYSTEM_PROMPT = `Ban la AI StudyMate - tro ly hoc tap thong minh danh cho sinh vien Viet Nam.
+const SYSTEM_PROMPT = `Bạn là AI StudyMate - trợ lý học tập thông minh dành cho sinh viên Việt Nam.
 
-Nguyen tac:
-- Tra loi bang tieng Viet, ro rang, de hieu
-- Giai thich tung buoc khi giai bai tap
-- Neu cau hoi mo ho, hoi lai de lam ro
-- Dua vi du minh hoa khi co the
-- Khuyen khich tu duy, khong chi dua dap an
-- Su dung markdown de format cau tra loi (bullet points, bold, code blocks)`;
+Nguyên tắc:
+- Trả lời bằng tiếng Việt, rõ ràng, dễ hiểu
+- Giải thích từng bước khi giải bài tập
+- Nếu câu hỏi mơ hồ, hỏi lại để làm rõ
+- Đưa ví dụ minh họa khi có thể
+- Khuyến khích tư duy, không chỉ đưa đáp án
+- Sử dụng markdown để format câu trả lời (bullet points, bold, code blocks)`;
 
 /**
  * Chat với AI — gửi tin nhắn kèm lịch sử hội thoại.
@@ -99,26 +99,26 @@ Tóm tắt:`;
 const generateQuiz = async (topic, count = 5) => {
   const aiModel = getModel();
 
-  const prompt = `Tao ${count} cau hoi trac nghiem ve chu de: "${topic}".
+  const prompt = `Tạo ${count} câu hỏi trắc nghiệm về chủ đề: "${topic}".
 
-Yeu cau:
-- Moi cau co dung 4 dap an (A, B, C, D)
-- Chi co 1 dap an dung
-- Co giai thich ngan gon cho dap an dung
-- Do kho tu de den kho
-- Tra loi bang tieng Viet
+Yêu cầu:
+- Mỗi câu có đúng 4 đáp án (A, B, C, D)
+- Chỉ có 1 đáp án đúng
+- Có giải thích ngắn gọn cho đáp án đúng
+- Độ khó từ dễ đến khó
+- Trả lời bằng tiếng Việt
 
-Tra ve DUNG format JSON sau, KHONG them bat ky text nao khac:
+Trả về ĐÚNG format JSON sau, KHÔNG thêm bất kỳ text nào khác:
 [
   {
-    "question": "Noi dung cau hoi?",
-    "options": ["Dap an A", "Dap an B", "Dap an C", "Dap an D"],
+    "question": "Nội dung câu hỏi?",
+    "options": ["Đáp án A", "Đáp án B", "Đáp án C", "Đáp án D"],
     "correctIndex": 0,
-    "explanation": "Giai thich tai sao dap an dung"
+    "explanation": "Giải thích tại sao đáp án đúng"
   }
 ]
 
-CHI TRA VE JSON ARRAY, KHONG CO MARKDOWN, KHONG CO BACKTICK.`;
+CHỈ TRẢ VỀ JSON ARRAY, KHÔNG CÓ MARKDOWN, KHÔNG CÓ BACKTICK.`;
 
   const result = await aiModel.generateContent(prompt);
   let responseText = result.response.text().trim();
@@ -135,7 +135,7 @@ CHI TRA VE JSON ARRAY, KHONG CO MARKDOWN, KHONG CO BACKTICK.`;
     questions = JSON.parse(responseText);
   } catch {
     throw Object.assign(
-      new Error('AI tra ve format khong hop le, vui long thu lai'),
+      new Error('AI trả về format không hợp lệ, vui lòng thử lại'),
       { statusCode: 502 }
     );
   }
@@ -143,14 +143,14 @@ CHI TRA VE JSON ARRAY, KHONG CO MARKDOWN, KHONG CO BACKTICK.`;
   // Validate structure
   if (!Array.isArray(questions) || questions.length === 0) {
     throw Object.assign(
-      new Error('AI khong tao duoc cau hoi, vui long thu lai'),
+      new Error('AI không tạo được câu hỏi, vui lòng thử lại'),
       { statusCode: 502 }
     );
   }
 
   // Validate từng câu
   return questions.map((q, i) => ({
-    question: q.question || `Cau hoi ${i + 1}`,
+    question: q.question || `Câu hỏi ${i + 1}`,
     options: Array.isArray(q.options) && q.options.length === 4
       ? q.options
       : ['A', 'B', 'C', 'D'],
@@ -192,4 +192,90 @@ Trả lời ngắn gọn, dễ hiểu, bằng tiếng Việt.`;
   return result.response.text();
 };
 
-module.exports = { chat, summarize, generateQuiz, explainQuizAnswer };
+/**
+ * Tạo gợi ý học tập cá nhân hóa bằng AI.
+ * @param {Object} userData - Dữ liệu học tập của user
+ * @returns {Array} Mảng gợi ý [{type, title, description, roomId?, priority}]
+ */
+const generateStudySuggestions = async (userData) => {
+  const aiModel = getModel();
+
+  const prompt = `Dựa vào dữ liệu học tập của sinh viên dưới đây, hãy tạo 3-5 gợi ý học tập cá nhân hóa.
+
+Dữ liệu học tập:
+"""
+${JSON.stringify(userData, null, 2)}
+"""
+
+Yêu cầu:
+- Phân tích điểm yếu từ kết quả quiz (môn nào điểm thấp → gợi ý ôn lại)
+- Phân tích tần suất học (phòng nào lâu không vào → nhắc nhở)
+- Gợi ý bước tiếp theo phù hợp
+- Mỗi gợi ý phải có hành động cụ thể
+- Trả lời bằng tiếng Việt
+
+Trả về ĐÚNG format JSON sau, KHÔNG thêm bất kỳ text nào khác:
+[
+  {
+    "type": "weak_subject|inactive_room|streak|improvement|new_topic",
+    "icon": "🔴|🟡|🔥|📈|💡",
+    "title": "Tiêu đề ngắn gọn (dưới 50 ký tự)",
+    "description": "Mô tả chi tiết và gợi ý hành động (dưới 100 ký tự)",
+    "roomName": "Tên phòng liên quan (nếu có, hoặc null)",
+    "roomId": "ID phòng (nếu có, hoặc null)",
+    "priority": "high|medium|low"
+  }
+]
+
+CHỈ TRẢ VỀ JSON ARRAY, KHÔNG CÓ MARKDOWN, KHÔNG CÓ BACKTICK.`;
+
+  const result = await aiModel.generateContent(prompt);
+  let responseText = result.response.text().trim();
+
+  // Loại bỏ markdown code block nếu AI vẫn thêm
+  responseText = responseText
+    .replace(/^```json?\s*/i, '')
+    .replace(/```\s*$/i, '')
+    .trim();
+
+  let suggestions;
+  try {
+    suggestions = JSON.parse(responseText);
+  } catch {
+    // Fallback nếu AI trả về format không hợp lệ
+    return [{
+      type: 'improvement',
+      icon: '💡',
+      title: 'Tiếp tục học tập!',
+      description: 'Hãy làm thêm quiz và ôn tập đều đặn để cải thiện kết quả.',
+      roomName: null,
+      roomId: null,
+      priority: 'medium',
+    }];
+  }
+
+  if (!Array.isArray(suggestions) || suggestions.length === 0) {
+    return [{
+      type: 'improvement',
+      icon: '💡',
+      title: 'Bắt đầu hành trình học tập!',
+      description: 'Hãy tạo hoặc tham gia phòng học và làm quiz để nhận gợi ý cá nhân hóa.',
+      roomName: null,
+      roomId: null,
+      priority: 'medium',
+    }];
+  }
+
+  // Validate & sanitize
+  return suggestions.slice(0, 5).map((s) => ({
+    type: s.type || 'improvement',
+    icon: s.icon || '💡',
+    title: (s.title || 'Gợi ý học tập').substring(0, 60),
+    description: (s.description || '').substring(0, 150),
+    roomName: s.roomName || null,
+    roomId: s.roomId || null,
+    priority: ['high', 'medium', 'low'].includes(s.priority) ? s.priority : 'medium',
+  }));
+};
+
+module.exports = { chat, summarize, generateQuiz, explainQuizAnswer, generateStudySuggestions };

@@ -1,0 +1,229 @@
+==================================================
+  AI STUDYMATE - DU LIEU MAU
+  Tao luc: 19:52:24 25/3/2026
+==================================================
+
+--- TAI KHOAN DANG NHAP ---
+(Tat ca mat khau: 123456)
+
+ 1. AI Test User           | aitest_1774420124751@example.com   
+ 2. AI Test User           | aitest_1774420201787@example.com   
+ 3. AI Test User           | aitest_1774420265903@example.com   
+ 4. AI Test User           | aitest_1774420362759@example.com   
+ 5. Quiz Tester            | quiztest_1774420601779@example.com 
+ 6. Test User              | testuser@example.com               
+ 7. Nguyễn Văn An          | an.nguyen@student.edu.vn            [PREMIUM]
+ 8. Trần Thị Bình          | binh.tran@student.edu.vn           
+ 9. Lê Minh Châu           | chau.le@student.edu.vn             
+10. Nguyen                 | nguyen@example.com                 
+11. TRAN NGOC TRUNG KIEN   | test@gmail.com                      [PREMIUM]
+12. Phạm Đức Dũng          | dung.pham@student.edu.vn            [PREMIUM]
+13. Hoàng Thị Hà           | ha.hoang@student.edu.vn            
+14. Vũ Quang Huy           | huy.vu@student.edu.vn               [PREMIUM]
+15. Đỗ Thị Kim Ngân        | ngan.do@student.edu.vn             
+16. Bùi Thanh Tùng         | tung.bui@student.edu.vn            
+17. Ngô Phương Linh        | linh.ngo@student.edu.vn            
+18. Đặng Văn Khoa          | khoa.dang@student.edu.vn            [PREMIUM]
+19. Trịnh Thị Mai          | mai.trinh@student.edu.vn           
+20. Lý Hoàng Nam           | nam.ly@student.edu.vn              
+21. Phan Thị Oanh          | oanh.phan@student.edu.vn            [PREMIUM]
+22. Dương Minh Phúc        | phuc.duong@student.edu.vn          
+23. Hồ Thị Quỳnh           | quynh.ho@student.edu.vn            
+24. Tô Văn Sơn             | son.to@student.edu.vn              
+25. Cao Thị Thảo           | thao.cao@student.edu.vn            
+26. Đinh Quốc Uy           | uy.dinh@student.edu.vn              [PREMIUM]
+27. Mai Xuân Vinh          | vinh.mai@student.edu.vn            
+28. Lương Thị Yến          | yen.luong@student.edu.vn           
+29. Trương Công Danh       | danh.truong@student.edu.vn          [PREMIUM]
+30. Huỳnh Thị Giang        | giang.huynh@student.edu.vn         
+31. Võ Đình Lâm            | lam.vo@student.edu.vn              
+32. Nguyễn Thị Nhung       | nhung.nguyen2@student.edu.vn       
+33. Trần Quốc Bảo          | bao.tran@student.edu.vn             [PREMIUM]
+34. Lê Thị Diễm            | diem.le@student.edu.vn             
+35. Phạm Hữu Phát          | phat.pham@student.edu.vn           
+36. Hoàng Minh Trí         | tri.hoang@student.edu.vn           
+37. Vũ Thị Trang           | trang.vu@student.edu.vn            
+38. Đỗ Anh Tuấn            | tuan.do@student.edu.vn             
+
+Tong: 38 users (9 Premium)
+
+--- PHONG HOC ---
+
+ 1. Test AI Room
+    Mon hoc: Toan
+    Ma moi: B721B8CA
+    Chu phong: AI Test User
+    Thanh vien: 1
+
+ 2. Test AI Room
+    Mon hoc: Toan
+    Ma moi: 90C7718B
+    Chu phong: AI Test User
+    Thanh vien: 1
+
+ 3. Test AI Room
+    Mon hoc: Toan
+    Ma moi: 0A74514D
+    Chu phong: AI Test User
+    Thanh vien: 1
+
+ 4. Test AI Room
+    Mon hoc: Toan
+    Ma moi: 247DC098
+    Chu phong: AI Test User
+    Thanh vien: 1
+
+ 5. Quiz Test Room
+    Mon hoc: Toan Cao Cap
+    Ma moi: DFC90EA3
+    Chu phong: Quiz Tester
+    Thanh vien: 1
+
+ 6. Nhóm ôn thi Toán rời rạc
+    Mon hoc: Toán rời rạc
+    Ma moi: 69C91986
+    Chu phong: Nguyễn Văn An
+    Thanh vien: 4
+
+ 7. Lập trình Web - Fullstack
+    Mon hoc: Lập trình Web
+    Ma moi: 8C2C2822
+    Chu phong: Trần Thị Bình
+    Thanh vien: 2
+
+ 8. Tiếng Anh giao tiếp B2
+    Mon hoc: Tiếng Anh
+    Ma moi: 3ACE334F
+    Chu phong: Lê Minh Châu
+    Thanh vien: 2
+
+ 9. Math Study
+    Mon hoc: Algebra
+    Ma moi: 16C616DA
+    Chu phong: Nguyen
+    Thanh vien: 2
+
+10. Toán k19
+    Mon hoc: Toán
+    Ma moi: 2CD7A450
+    Chu phong: TRAN NGOC TRUNG KIEN
+    Thanh vien: 1
+
+11. Cấu trúc dữ liệu & Giải thuật
+    Mon hoc: CTDL & GT
+    Ma moi: 2F75D529
+    Chu phong: Phạm Đức Dũng
+    Thanh vien: 12
+
+12. Vật lý đại cương 2
+    Mon hoc: Vật lý
+    Ma moi: 486201AC
+    Chu phong: Hoàng Thị Hà
+    Thanh vien: 9
+
+13. Machine Learning cơ bản
+    Mon hoc: Machine Learning
+    Ma moi: 93E3E6B4
+    Chu phong: Vũ Quang Huy
+    Thanh vien: 11
+
+14. Nhập môn Trí tuệ nhân tạo
+    Mon hoc: Trí tuệ nhân tạo
+    Ma moi: B2095B27
+    Chu phong: Đặng Văn Khoa
+    Thanh vien: 10
+
+15. Kinh tế vĩ mô
+    Mon hoc: Kinh tế học
+    Ma moi: 97CFF636
+    Chu phong: Đỗ Thị Kim Ngân
+    Thanh vien: 9
+
+16. Mạng máy tính
+    Mon hoc: Mạng máy tính
+    Ma moi: B35BF425
+    Chu phong: Bùi Thanh Tùng
+    Thanh vien: 10
+
+17. Xác suất thống kê
+    Mon hoc: Xác suất TK
+    Ma moi: 8D35FD1B
+    Chu phong: Trịnh Thị Mai
+    Thanh vien: 11
+
+18. Thiết kế UX/UI
+    Mon hoc: UX/UI Design
+    Ma moi: 37F0FC0A
+    Chu phong: Ngô Phương Linh
+    Thanh vien: 8
+
+19. Triết học Mác - Lênin
+    Mon hoc: Triết học
+    Ma moi: E5BB3F87
+    Chu phong: Lý Hoàng Nam
+    Thanh vien: 12
+
+--- QUIZ ---
+
+ 1. Phuong trinh bac hai (3 cau)
+    Phong: Quiz Test Room
+    Tao boi: Quiz Tester
+
+ 2. Logic mệnh đề cơ bản (5 cau)
+    Phong: Nhóm ôn thi Toán rời rạc
+    Tao boi: Nguyễn Văn An
+
+ 3. JavaScript ES6+ Fundamentals (4 cau)
+    Phong: Lập trình Web - Fullstack
+    Tao boi: Trần Thị Bình
+
+ 4. Algebra basics (5 cau)
+    Phong: Math Study
+    Tao boi: Nguyen
+
+ 5. Lý thuyết đồ thị (4 cau)
+    Phong: Nhóm ôn thi Toán rời rạc
+    Tao boi: Trần Thị Bình
+
+ 6. React Hooks nâng cao (4 cau)
+    Phong: Lập trình Web - Fullstack
+    Tao boi: Vũ Quang Huy
+
+ 7. Conditional Sentences (4 cau)
+    Phong: Tiếng Anh giao tiếp B2
+    Tao boi: Lê Minh Châu
+
+ 8. Độ phức tạp thuật toán (5 cau)
+    Phong: Cấu trúc dữ liệu & Giải thuật
+    Tao boi: Phạm Đức Dũng
+
+ 9. Điện từ học cơ bản (4 cau)
+    Phong: Vật lý đại cương 2
+    Tao boi: Hoàng Thị Hà
+
+10. Supervised Learning (5 cau)
+    Phong: Machine Learning cơ bản
+    Tao boi: Vũ Quang Huy
+
+11. Thuật toán tìm kiếm AI (4 cau)
+    Phong: Nhập môn Trí tuệ nhân tạo
+    Tao boi: Đặng Văn Khoa
+
+12. Mô hình OSI & TCP/IP (4 cau)
+    Phong: Mạng máy tính
+    Tao boi: Bùi Thanh Tùng
+
+13. Xác suất cơ bản (4 cau)
+    Phong: Xác suất thống kê
+    Tao boi: Trịnh Thị Mai
+
+14. Nguyên tắc thiết kế UI (4 cau)
+    Phong: Thiết kế UX/UI
+    Tao boi: Ngô Phương Linh
+
+--- THONG KE ---
+Users: 38
+Rooms: 19
+Quizzes: 14
+Quiz Results: 53
+Conversations: 12

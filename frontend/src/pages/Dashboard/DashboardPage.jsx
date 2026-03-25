@@ -1,12 +1,13 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
-import { roomAPI } from '../../services/api';
+import { roomAPI, aiAPI } from '../../services/api';
 import {
   Plus, Users, BookOpen, LogOut, Hash,
   ArrowRight, Clock, Search, UserPlus, Trash2, Settings,
-  Crown, Layers
+  Crown, Layers, Pin, PinOff, SortAsc, ChevronDown,
+  Zap, Sparkles, RefreshCw, AlertCircle
 } from 'lucide-react';
 import './Dashboard.css';
 import '../Profile/Profile.css';
@@ -27,6 +28,21 @@ export default function DashboardPage() {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Pinning & Sorting
+  const [pinnedIds, setPinnedIds] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('studymate_pinned_rooms') || '[]');
+    } catch { return []; }
+  });
+  const [sortBy, setSortBy] = useState(() => localStorage.getItem('studymate_sort') || 'recent');
+  const [showSortMenu, setShowSortMenu] = useState(false);
+
+  // AI Study Suggestions
+  const [suggestions, setSuggestions] = useState([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [suggestionsError, setSuggestionsError] = useState('');
+  const [suggestionsLoaded, setSuggestionsLoaded] = useState(false);
+
   // Pagination
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -35,6 +51,53 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchRooms();
   }, []);
+
+  // Persist pinned rooms
+  useEffect(() => {
+    localStorage.setItem('studymate_pinned_rooms', JSON.stringify(pinnedIds));
+  }, [pinnedIds]);
+
+  // Persist sort preference
+  useEffect(() => {
+    localStorage.setItem('studymate_sort', sortBy);
+  }, [sortBy]);
+
+  // Fetch AI Study Suggestions
+  const fetchSuggestions = useCallback(async () => {
+    setSuggestionsLoading(true);
+    setSuggestionsError('');
+    try {
+      const { data } = await aiAPI.getStudySuggestions();
+      setSuggestions(data.data.suggestions || []);
+      setSuggestionsLoaded(true);
+    } catch {
+      setSuggestionsError('Không thể tải gợi ý. Thử lại sau.');
+    } finally {
+      setSuggestionsLoading(false);
+    }
+  }, []);
+
+  // Auto-fetch suggestions when rooms are loaded
+  useEffect(() => {
+    if (!loading && rooms.length > 0 && !suggestionsLoaded) {
+      fetchSuggestions();
+    }
+  }, [loading, rooms.length, suggestionsLoaded, fetchSuggestions]);
+
+  // Track recent rooms access (called when navigating to a room)
+  const trackRoomAccess = useCallback((roomId) => {
+    try {
+      const recent = JSON.parse(localStorage.getItem('studymate_recent_rooms') || '[]');
+      const filtered = recent.filter(id => id !== roomId);
+      filtered.unshift(roomId);
+      localStorage.setItem('studymate_recent_rooms', JSON.stringify(filtered.slice(0, 10)));
+    } catch { /* ignore */ }
+  }, []);
+
+  const navigateToRoom = useCallback((roomId) => {
+    trackRoomAccess(roomId);
+    navigate(`/room/${roomId}`);
+  }, [navigate, trackRoomAccess]);
 
   const fetchRooms = async (pageNum = 1) => {
     if (pageNum === 1) setLoading(true);
@@ -115,18 +178,64 @@ export default function DashboardPage() {
     }
   };
 
-  const filteredRooms = useMemo(() =>
-    rooms.filter((r) =>
+  const filteredRooms = useMemo(() => {
+    let result = rooms.filter((r) =>
       r.name.toLowerCase().includes(search.toLowerCase()) ||
       r.subject.toLowerCase().includes(search.toLowerCase())
-    ),
-    [rooms, search]
-  );
+    );
+
+    // Sort
+    result = [...result].sort((a, b) => {
+      switch (sortBy) {
+        case 'members':
+          return (b.members?.length || 0) - (a.members?.length || 0);
+        case 'name':
+          return a.name.localeCompare(b.name, 'vi');
+        case 'oldest':
+          return new Date(a.createdAt) - new Date(b.createdAt);
+        case 'recent':
+        default:
+          return new Date(b.updatedAt) - new Date(a.updatedAt);
+      }
+    });
+
+    // Pinned rooms always on top
+    const pinned = result.filter(r => pinnedIds.includes(r._id));
+    const unpinned = result.filter(r => !pinnedIds.includes(r._id));
+    return [...pinned, ...unpinned];
+  }, [rooms, search, sortBy, pinnedIds]);
 
   const totalMembers = useMemo(() =>
     rooms.reduce((sum, r) => sum + (r.members?.length || 0), 0),
     [rooms]
   );
+
+  // Quick Resume: get recent rooms based on localStorage tracking
+  const recentRooms = useMemo(() => {
+    try {
+      const recentIds = JSON.parse(localStorage.getItem('studymate_recent_rooms') || '[]');
+      return recentIds
+        .map(id => rooms.find(r => r._id === id))
+        .filter(Boolean)
+        .slice(0, 3);
+    } catch { return []; }
+  }, [rooms]);
+
+  const togglePin = useCallback((roomId, e) => {
+    e.stopPropagation();
+    setPinnedIds(prev =>
+      prev.includes(roomId)
+        ? prev.filter(id => id !== roomId)
+        : [...prev, roomId]
+    );
+  }, []);
+
+  const SORT_OPTIONS = [
+    { value: 'recent', label: 'Hoạt động gần nhất' },
+    { value: 'members', label: 'Nhiều thành viên nhất' },
+    { value: 'name', label: 'Theo tên A-Z' },
+    { value: 'oldest', label: 'Cũ nhất trước' },
+  ];
 
   const handleLogout = () => {
     logout();
@@ -278,6 +387,119 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* ── Quick Resume Cards ──────────────────────── */}
+        {!loading && recentRooms.length > 0 && (
+          <section className="quick-resume-section animate-fade-in" aria-label="Tiếp tục học">
+            <div className="section-label">
+              <Zap size={18} className="section-label-icon" />
+              <h2>Tiếp tục học</h2>
+            </div>
+            <div className="quick-resume-grid">
+              {recentRooms.map((room, idx) => (
+                <button
+                  key={room._id}
+                  className={`quick-resume-card quick-resume-card-${idx + 1}`}
+                  onClick={() => navigateToRoom(room._id)}
+                >
+                  <div className="qr-card-top">
+                    <div className="qr-card-icon">
+                      <BookOpen size={18} />
+                    </div>
+                    <span className="qr-badge">{room.subject}</span>
+                  </div>
+                  <h3 className="qr-card-title">{room.name}</h3>
+                  <div className="qr-card-bottom">
+                    <span className="qr-meta">
+                      <Users size={12} />
+                      {room.members?.length || 0}
+                    </span>
+                    <span className="qr-continue">
+                      Tiếp tục
+                      <ArrowRight size={14} />
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ── AI Study Suggestions ─────────────────────── */}
+        {!loading && rooms.length > 0 && (
+          <section className="ai-suggestions-section animate-fade-in" aria-label="Gợi ý từ AI">
+            <div className="section-label">
+              <Sparkles size={18} className="section-label-icon ai-icon" />
+              <h2>AI Gợi ý cho bạn</h2>
+              <button
+                className="suggestions-refresh-btn"
+                onClick={fetchSuggestions}
+                disabled={suggestionsLoading}
+                title="Làm mới gợi ý"
+                aria-label="Làm mới gợi ý AI"
+              >
+                <RefreshCw size={14} className={suggestionsLoading ? 'spin' : ''} />
+              </button>
+            </div>
+
+            {suggestionsLoading && !suggestionsLoaded && (
+              <div className="ai-suggestions-grid">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="ai-suggestion-skeleton">
+                    <div className="skeleton" style={{ width: 32, height: 32, borderRadius: 8 }} />
+                    <div style={{ flex: 1 }}>
+                      <div className="skeleton" style={{ height: 14, width: '70%', marginBottom: 8 }} />
+                      <div className="skeleton" style={{ height: 12, width: '90%' }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {suggestionsError && (
+              <div className="ai-suggestions-error">
+                <AlertCircle size={16} />
+                <span>{suggestionsError}</span>
+                <button className="btn-retry" onClick={fetchSuggestions}>Thử lại</button>
+              </div>
+            )}
+
+            {!suggestionsLoading && !suggestionsError && suggestions.length > 0 && (
+              <div className="ai-suggestions-grid">
+                {suggestions.map((s, idx) => (
+                  <div
+                    key={idx}
+                    className={`ai-suggestion-card priority-${s.priority}`}
+                    onClick={() => s.roomId && navigateToRoom(s.roomId)}
+                    role={s.roomId ? 'button' : undefined}
+                    tabIndex={s.roomId ? 0 : undefined}
+                    style={{ cursor: s.roomId ? 'pointer' : 'default' }}
+                  >
+                    <span className="suggestion-icon" aria-hidden="true">{s.icon}</span>
+                    <div className="suggestion-content">
+                      <h4 className="suggestion-title">{s.title}</h4>
+                      <p className="suggestion-desc">{s.description}</p>
+                      {s.roomName && (
+                        <span className="suggestion-room">
+                          <BookOpen size={11} />
+                          {s.roomName}
+                        </span>
+                      )}
+                    </div>
+                    <span className={`suggestion-priority-dot priority-${s.priority}`} title={`Ưu tiên: ${s.priority}`} />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {suggestionsLoading && suggestionsLoaded && (
+              <div className="ai-suggestions-refreshing">
+                <RefreshCw size={14} className="spin" />
+                <span>Đang cập nhật gợi ý...</span>
+              </div>
+            )}
+          </section>
+        )}
+
         {/* ── Create / Join Form ──────────────────────── */}
         {(showCreate || showJoin) && (
           <div className="dashboard-modal-card animate-fade-in-up">
@@ -351,24 +573,61 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* ── Search + Room Label ──────────────────────── */}
+        {/* ── Search + Room Label + Sort ────────────────── */}
         {rooms.length > 0 && (
           <>
             <div className="section-label">
               <h2>Phòng học của bạn</h2>
               <span className="room-count">{rooms.length} phòng</span>
+              {pinnedIds.length > 0 && (
+                <span className="pinned-count">
+                  <Pin size={11} />
+                  {pinnedIds.filter(id => rooms.some(r => r._id === id)).length} đã ghim
+                </span>
+              )}
             </div>
-            <div className="dashboard-search animate-fade-in">
-              <Search size={17} className="search-icon" />
-              <input
-                id="search-rooms"
-                type="text"
-                className="input"
-                placeholder="Tìm kiếm phòng học..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                aria-label="Tìm kiếm phòng học"
-              />
+            <div className="dashboard-toolbar animate-fade-in">
+              <div className="dashboard-search">
+                <Search size={17} className="search-icon" />
+                <input
+                  id="search-rooms"
+                  type="text"
+                  className="input"
+                  placeholder="Tìm kiếm phòng học..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  aria-label="Tìm kiếm phòng học"
+                />
+              </div>
+              <div className="sort-dropdown" onBlur={() => setTimeout(() => setShowSortMenu(false), 150)}>
+                <button
+                  id="sort-rooms-btn"
+                  className="sort-trigger"
+                  onClick={() => setShowSortMenu(!showSortMenu)}
+                  aria-haspopup="listbox"
+                  aria-expanded={showSortMenu}
+                >
+                  <SortAsc size={15} />
+                  <span className="sort-label">{SORT_OPTIONS.find(o => o.value === sortBy)?.label}</span>
+                  <ChevronDown size={14} className={`sort-chevron ${showSortMenu ? 'open' : ''}`} />
+                </button>
+                {showSortMenu && (
+                  <ul className="sort-menu" role="listbox">
+                    {SORT_OPTIONS.map(opt => (
+                      <li
+                        key={opt.value}
+                        role="option"
+                        aria-selected={sortBy === opt.value}
+                        className={`sort-option ${sortBy === opt.value ? 'active' : ''}`}
+                        onClick={() => { setSortBy(opt.value); setShowSortMenu(false); }}
+                      >
+                        {opt.label}
+                        {sortBy === opt.value && <span className="sort-check">✓</span>}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
           </>
         )}
@@ -383,53 +642,65 @@ export default function DashboardPage() {
                   <div className="skeleton" style={{ height: 14, width: '80%' }} />
                 </div>
               ))
-            : filteredRooms.map((room) => (
-                <article
-                  key={room._id}
-                  className="room-card"
-                  onClick={() => navigate(`/room/${room._id}`)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => e.key === 'Enter' && navigate(`/room/${room._id}`)}
-                >
-                  <div className="room-card-header">
-                    <div className="room-card-icon">
-                      <BookOpen size={19} />
-                    </div>
-                    <div className="room-card-actions">
-                      <span className="badge">{room.subject}</span>
-                      {room.owner?._id === user?._id && (
+            : filteredRooms.map((room) => {
+                const isPinned = pinnedIds.includes(room._id);
+                return (
+                  <article
+                    key={room._id}
+                    className={`room-card ${isPinned ? 'room-card-pinned' : ''}`}
+                    onClick={() => navigateToRoom(room._id)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && navigateToRoom(room._id)}
+                  >
+                    {isPinned && <div className="pin-indicator" aria-label="Đã ghim"><Pin size={11} /></div>}
+                    <div className="room-card-header">
+                      <div className="room-card-icon">
+                        <BookOpen size={19} />
+                      </div>
+                      <div className="room-card-actions">
+                        <span className="badge">{room.subject}</span>
                         <button
-                          className="btn-icon-sm"
-                          title="Xóa phòng"
-                          onClick={(e) => { e.stopPropagation(); setDeleteConfirm(room); }}
-                          aria-label={`Xóa phòng ${room.name}`}
+                          className={`btn-icon-sm btn-pin ${isPinned ? 'pinned' : ''}`}
+                          title={isPinned ? 'Bỏ ghim' : 'Ghim phòng'}
+                          onClick={(e) => togglePin(room._id, e)}
+                          aria-label={isPinned ? `Bỏ ghim ${room.name}` : `Ghim ${room.name}`}
                         >
-                          <Trash2 size={15} />
+                          {isPinned ? <PinOff size={14} /> : <Pin size={14} />}
                         </button>
-                      )}
+                        {room.owner?._id === user?._id && (
+                          <button
+                            className="btn-icon-sm"
+                            title="Xóa phòng"
+                            onClick={(e) => { e.stopPropagation(); setDeleteConfirm(room); }}
+                            aria-label={`Xóa phòng ${room.name}`}
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <h3 className="room-card-title">{room.name}</h3>
-                  <div className="room-card-meta">
-                    <span className="meta-item">
-                      <Users size={13} />
-                      {room.members?.length || 0} thành viên
-                    </span>
-                    <span className="meta-item">
-                      <Hash size={13} />
-                      {room.inviteCode}
-                    </span>
-                  </div>
-                  <div className="room-card-footer">
-                    <span className="meta-item">
-                      <Clock size={13} />
-                      {new Date(room.updatedAt).toLocaleDateString('vi-VN')}
-                    </span>
-                    <ArrowRight size={15} className="room-card-arrow" />
-                  </div>
-                </article>
-              ))
+                    <h3 className="room-card-title">{room.name}</h3>
+                    <div className="room-card-meta">
+                      <span className="meta-item">
+                        <Users size={13} />
+                        {room.members?.length || 0} thành viên
+                      </span>
+                      <span className="meta-item">
+                        <Hash size={13} />
+                        {room.inviteCode}
+                      </span>
+                    </div>
+                    <div className="room-card-footer">
+                      <span className="meta-item">
+                        <Clock size={13} />
+                        {new Date(room.updatedAt).toLocaleDateString('vi-VN')}
+                      </span>
+                      <ArrowRight size={15} className="room-card-arrow" />
+                    </div>
+                  </article>
+                );
+              })
           }
 
           {!loading && filteredRooms.length === 0 && rooms.length > 0 && (

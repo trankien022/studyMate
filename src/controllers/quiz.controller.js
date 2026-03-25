@@ -19,6 +19,14 @@ const generateQuiz = async (req, res) => {
     });
   }
 
+  // Validate topic length
+  if (topic.trim().length < 2) {
+    return res.status(400).json({
+      success: false,
+      message: 'Chủ đề quiz phải có ít nhất 2 ký tự',
+    });
+  }
+
   // Kiểm tra membership
   await checkRoomMembership(roomId, req.user._id);
 
@@ -199,6 +207,15 @@ const submitQuiz = async (req, res) => {
     return res.status(400).json({
       success: false,
       message: `Quiz có ${quiz.questions.length} câu, bạn gửi ${answers.length} câu trả lời`,
+    });
+  }
+
+  // Validate mỗi câu trả lời phải là số 0-3
+  const invalidAnswer = answers.find((a) => typeof a !== 'number' || a < 0 || a > 3);
+  if (invalidAnswer !== undefined) {
+    return res.status(400).json({
+      success: false,
+      message: 'Mỗi câu trả lời phải là số từ 0 đến 3',
     });
   }
 

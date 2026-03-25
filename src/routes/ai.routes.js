@@ -7,6 +7,7 @@ const {
   getConversation,
   deleteConversation,
   explainQuiz,
+  getStudySuggestions,
 } = require('../controllers/ai.controller');
 const auth = require('../middleware/auth');
 const asyncHandler = require('../middleware/asyncHandler');
@@ -22,5 +23,6 @@ router.get('/history/:roomId', asyncHandler(getChatHistory));
 router.get('/conversation/:id', asyncHandler(getConversation));
 router.delete('/conversation/:id', asyncHandler(deleteConversation));
 router.post('/explain-quiz', aiRateLimiter, asyncHandler(explainQuiz));
+router.get('/study-suggestions', aiRateLimiter, asyncHandler(getStudySuggestions));
 
 module.exports = router;

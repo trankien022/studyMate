@@ -59,6 +59,7 @@ export const aiAPI = {
   getConversation: (id) => api.get(`/ai/conversation/${id}`),
   deleteConversation: (id) => api.delete(`/ai/conversation/${id}`),
   explainQuiz: (data) => api.post('/ai/explain-quiz', data),
+  getStudySuggestions: () => api.get('/ai/study-suggestions'),
 };
 
 /* ─── Quiz ─────────────────────────────────────────────── */

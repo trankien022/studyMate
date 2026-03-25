@@ -18,6 +18,14 @@ const chatWithAI = async (req, res) => {
     });
   }
 
+  // Validate message length
+  if (message.length > 5000) {
+    return res.status(400).json({
+      success: false,
+      message: 'Tin nhắn không được quá 5000 ký tự',
+    });
+  }
+
   // Kiểm tra membership
   await checkRoomMembership(roomId, req.user._id);
 
@@ -92,6 +100,14 @@ const summarizeText = async (req, res) => {
     return res.status(400).json({
       success: false,
       message: 'Đoạn văn bản quá ngắn (tối thiểu 50 ký tự)',
+    });
+  }
+
+  // Validate max length
+  if (text.length > 50000) {
+    return res.status(400).json({
+      success: false,
+      message: 'Đoạn văn bản quá dài (tối đa 50000 ký tự)',
     });
   }
 
@@ -231,4 +247,119 @@ const explainQuiz = async (req, res) => {
   });
 };
 
-module.exports = { chatWithAI, summarizeText, getChatHistory, getConversation, deleteConversation, explainQuiz };
+/**
+ * GET /api/ai/study-suggestions
+ * Tạo gợi ý học tập cá nhân hóa dựa trên data thực tế của user.
+ */
+// Simple in-memory cache (per user, TTL 30 phút)
+const suggestionsCache = new Map();
+const CACHE_TTL = 30 * 60 * 1000;
+
+const getStudySuggestions = async (req, res) => {
+  const userId = req.user._id.toString();
+
+  // Check cache
+  const cached = suggestionsCache.get(userId);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return res.json({
+      success: true,
+      data: { suggestions: cached.suggestions, cached: true },
+    });
+  }
+
+  const Room = require('../models/Room');
+  const Quiz = require('../models/Quiz');
+  const QuizResult = require('../models/QuizResult');
+
+  // 1. Lấy tất cả phòng user tham gia
+  const rooms = await Room.find({ members: req.user._id })
+    .select('name subject updatedAt createdAt')
+    .sort({ updatedAt: -1 })
+    .lean();
+
+  if (rooms.length === 0) {
+    const defaultSuggestions = [{
+      type: 'new_topic',
+      icon: '💡',
+      title: 'Bắt đầu hành trình học tập!',
+      description: 'Hãy tạo hoặc tham gia phòng học để bắt đầu.',
+      roomName: null,
+      roomId: null,
+      priority: 'high',
+    }];
+    return res.json({ success: true, data: { suggestions: defaultSuggestions, cached: false } });
+  }
+
+  const roomIds = rooms.map((r) => r._id);
+
+  // 2. Lấy tất cả quiz trong các phòng user tham gia
+  const quizzes = await Quiz.find({ roomId: { $in: roomIds } })
+    .select('_id topic roomId createdAt')
+    .lean();
+
+  const quizIdList = quizzes.map((q) => q._id);
+
+  // 3. Lấy kết quả quiz của user
+  const userResults = await QuizResult.find({
+    quizId: { $in: quizIdList },
+    userId: req.user._id,
+  })
+    .populate('quizId', 'topic roomId')
+    .sort({ createdAt: -1 })
+    .lean();
+
+  // 4. Tổng hợp data cho AI
+  const now = new Date();
+  const roomSummaries = rooms.map((room) => {
+    const roomQuizzes = quizzes.filter((q) => q.roomId.toString() === room._id.toString());
+    const roomResults = userResults.filter((r) => r.quizId?.roomId?.toString() === room._id.toString());
+
+    const avgScore = roomResults.length > 0
+      ? Math.round(roomResults.reduce((sum, r) => sum + (r.score / r.total) * 100, 0) / roomResults.length)
+      : null;
+
+    const daysSinceActivity = Math.floor((now - new Date(room.updatedAt)) / (1000 * 60 * 60 * 24));
+
+    return {
+      roomId: room._id.toString(),
+      roomName: room.name,
+      subject: room.subject,
+      totalQuizzes: roomQuizzes.length,
+      quizzesCompleted: roomResults.length,
+      avgScore,
+      daysSinceLastActivity: daysSinceActivity,
+      weakTopics: roomResults
+        .filter((r) => (r.score / r.total) < 0.6)
+        .map((r) => r.quizId?.topic)
+        .filter(Boolean),
+    };
+  });
+
+  const userData = {
+    totalRooms: rooms.length,
+    totalQuizzesTaken: userResults.length,
+    overallAvgScore: userResults.length > 0
+      ? Math.round(userResults.reduce((sum, r) => sum + (r.score / r.total) * 100, 0) / userResults.length)
+      : null,
+    rooms: roomSummaries,
+    recentActivity: userResults.slice(0, 5).map((r) => ({
+      topic: r.quizId?.topic,
+      score: r.score,
+      total: r.total,
+      daysAgo: Math.floor((now - new Date(r.createdAt)) / (1000 * 60 * 60 * 24)),
+    })),
+  };
+
+  // 5. Gọi AI
+  const suggestions = await aiService.generateStudySuggestions(userData);
+
+  // Cache kết quả
+  suggestionsCache.set(userId, { suggestions, timestamp: Date.now() });
+
+  res.json({
+    success: true,
+    data: { suggestions, cached: false },
+  });
+};
+
+module.exports = { chatWithAI, summarizeText, getChatHistory, getConversation, deleteConversation, explainQuiz, getStudySuggestions };

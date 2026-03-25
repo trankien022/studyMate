@@ -18,6 +18,14 @@ const createRoom = async (req, res) => {
     });
   }
 
+  // Validate subject length
+  if (subject.trim().length > 100) {
+    return res.status(400).json({
+      success: false,
+      message: 'Tên môn học không được quá 100 ký tự',
+    });
+  }
+
   const room = await Room.create({
     name,
     subject,
@@ -108,6 +116,14 @@ const joinRoom = async (req, res) => {
     return res.status(400).json({
       success: false,
       message: 'Vui lòng nhập mã mời',
+    });
+  }
+
+  // Validate inviteCode format (8 hex characters)
+  if (!/^[A-Fa-f0-9]{8}$/.test(inviteCode.trim())) {
+    return res.status(400).json({
+      success: false,
+      message: 'Mã mời không đúng định dạng (8 ký tự)',
     });
   }
 

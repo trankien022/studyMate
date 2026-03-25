@@ -25,6 +25,31 @@ const register = async (req, res) => {
     });
   }
 
+  // Validate email format
+  const emailRegex = /^\S+@\S+\.\S+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Email không đúng định dạng',
+    });
+  }
+
+  // Validate password strength
+  if (password.length < 6) {
+    return res.status(400).json({
+      success: false,
+      message: 'Mật khẩu phải có ít nhất 6 ký tự',
+    });
+  }
+
+  // Validate name length
+  if (name.trim().length < 2 || name.trim().length > 50) {
+    return res.status(400).json({
+      success: false,
+      message: 'Tên phải có từ 2 đến 50 ký tự',
+    });
+  }
+
   // Kiểm tra email đã tồn tại chưa
   const existingUser = await User.findOne({ email });
   if (existingUser) {
