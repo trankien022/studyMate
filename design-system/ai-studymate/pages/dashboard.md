@@ -1,7 +1,7 @@
 # Dashboard Page Overrides
 
 > **PROJECT:** AI StudyMate
-> **Generated:** 2026-03-25 17:27:38
+> **Generated:** 2026-03-25 20:15:26
 > **Page Type:** Dashboard / Data View
 
 > ⚠️ **IMPORTANT:** Rules in this file **override** the Master file (`design-system/MASTER.md`).
@@ -13,13 +13,12 @@
 
 ### Layout Overrides
 
-- **Max Width:** 800px (narrow, focused)
-- **Layout:** Single column, centered
-- **Sections:** 1. Hero headline, 2. Short description, 3. Benefit bullets (3 max), 4. CTA, 5. Footer
+- **Max Width:** 1200px (standard)
+- **Layout:** Full-width sections, centered content
 
 ### Spacing Overrides
 
-- **Content Density:** Low — focus on clarity
+- No overrides — use Master spacing
 
 ### Typography Overrides
 
@@ -27,7 +26,7 @@
 
 ### Color Overrides
 
-- **Strategy:** Minimalist: Brand + white #FFFFFF + accent. Buttons: High contrast 7:1+. Text: Black/Dark grey
+- No overrides — use Master colors
 
 ### Component Overrides
 
@@ -43,5 +42,4 @@
 
 ## Recommendations
 
-- Effects: KPI value animations (count-up), trend arrow direction animations, metric card hover lift, alert pulse effect
-- CTA Placement: Center, large CTA button
+- Effects: Realistic shadows (layers), depth (perspective), texture details (noise, grain), realistic animations (300-500ms)

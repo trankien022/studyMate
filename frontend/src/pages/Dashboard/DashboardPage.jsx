@@ -474,7 +474,7 @@ export default function DashboardPage() {
                     tabIndex={s.roomId ? 0 : undefined}
                     style={{ cursor: s.roomId ? 'pointer' : 'default' }}
                   >
-                    <span className="suggestion-icon" aria-hidden="true">{s.icon}</span>
+                    <div className="suggestion-icon" aria-hidden="true">{s.icon || <Sparkles size={16} />}</div>
                     <div className="suggestion-content">
                       <h4 className="suggestion-title">{s.title}</h4>
                       <p className="suggestion-desc">{s.description}</p>
