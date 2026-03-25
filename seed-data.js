@@ -434,6 +434,8 @@ async function seed() {
         owner: users[r.ownerIdx]._id,
         members: r.memberIdxs.map((i) => users[i]._id),
         notes: r.notes,
+        isPublic: true,
+        description: `Chào mừng bạn đến với phòng học cộng đồng môn ${r.subject}. Nơi mọi người chia sẻ kiến thức, thảo luận bài tập và thi thử. Tham gia cùng bọn mình nhé!`,
       });
       // Fake updatedAt cho đa dạng
       if (r.daysAgo > 0) {

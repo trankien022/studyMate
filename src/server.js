@@ -17,6 +17,7 @@ const documentRoutes = require('./routes/document.routes');
 const taskRoutes = require('./routes/task.routes');
 const badgeRoutes = require('./routes/badge.routes');
 const tutorRoutes = require('./routes/tutor.routes');
+const knowledgemapRoutes = require('./routes/knowledgemap.routes');
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use('/api/documents', documentRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/badges', badgeRoutes);
 app.use('/api/tutor', tutorRoutes);
+app.use('/api/knowledge-map', knowledgemapRoutes);
 
 // Serve uploaded files (static)
 const path = require('path');

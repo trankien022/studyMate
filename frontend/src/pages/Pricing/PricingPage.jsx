@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import {
   Crown, Check, X, Zap, MessageSquare, Brain, FileText,
   BarChart3, BookOpen, ArrowLeft, Sparkles, Shield,
-  ChevronDown, Lock, CreditCard, Layers
+  ChevronDown, Lock, CreditCard, Layers, Bot, DownloadCloud
 } from 'lucide-react';
 import { paymentAPI } from '../../services/api';
 import toast from 'react-hot-toast';
@@ -14,60 +14,52 @@ const PREMIUM_PRICE = 99000;
 
 const features = [
   {
-    name: 'Phòng học',
+    name: 'Không gian học (Workspace)',
     free: 'Tối đa 3 phòng',
     premium: 'Không giới hạn',
     icon: BookOpen,
-    freeShort: '3 phòng',
-    premiumShort: 'Unlimited',
   },
   {
-    name: 'AI Chat',
-    free: '10 tin nhắn/ngày',
-    premium: 'Không giới hạn',
+    name: 'Hỏi đáp AI nhanh',
+    free: '10 lượt / ngày',
+    premium: 'Không giới hạn + Tốc độ cao',
     icon: MessageSquare,
-    freeShort: '10/ngày',
-    premiumShort: 'Unlimited',
   },
   {
-    name: 'Tạo Quiz',
-    free: '3 quiz/ngày',
-    premium: 'Không giới hạn',
+    name: 'Gia sư AI cá nhân hóa (AI Tutor)',
+    free: false,
+    premium: 'Tuỳ chỉnh độ khó & phương pháp',
+    icon: Bot,
+  },
+  {
+    name: 'Tạo Quiz tự động từ AI',
+    free: '3 bài / ngày',
+    premium: 'Không giới hạn tự do',
     icon: Zap,
-    freeShort: '3/ngày',
-    premiumShort: 'Unlimited',
   },
   {
-    name: 'Số câu hỏi/quiz',
+    name: 'Quy mô bài điểm tra (Quiz)',
     free: 'Tối đa 10 câu',
-    premium: 'Tối đa 30 câu',
-    icon: FileText,
-    freeShort: '10 câu',
-    premiumShort: '30 câu',
+    premium: 'Lên tới 50 câu / bài',
+    icon: Layers,
   },
   {
     name: 'Deep Explanation AI',
     free: false,
-    premium: true,
+    premium: 'Giải thích chi tiết chuyên sâu',
     icon: Brain,
   },
   {
-    name: 'Xuất kết quả Quiz',
+    name: 'Báo cáo Analytics & Lộ trình',
     free: false,
-    premium: true,
-    icon: FileText,
-  },
-  {
-    name: 'Flashcard Mode',
-    free: false,
-    premium: true,
-    icon: BookOpen,
-  },
-  {
-    name: 'Analytics chi tiết',
-    free: false,
-    premium: true,
+    premium: 'Báo cáo tiến độ chuẩn xác',
     icon: BarChart3,
+  },
+  {
+    name: 'Flashcard Mode & Xuất dữ liệu',
+    free: false,
+    premium: 'Học tập tương tác & Xuất PDF',
+    icon: DownloadCloud,
   },
 ];
 
@@ -78,15 +70,15 @@ const faqs = [
   },
   {
     q: 'Tôi có thể hủy gói Premium bất kỳ lúc nào không?',
-    a: 'Gói Premium có thời hạn 30 ngày và không tự động gia hạn. Khi hết hạn, tài khoản sẽ tự động chuyển về Free mà không mất dữ liệu.',
+    a: 'Gói Premium có thời hạn 30 ngày và không tự động gia hạn. Khi hết hạn, tài khoản sẽ tự động chuyển về Free mà không mất file hay nhật ký học tập.',
   },
   {
-    q: 'Nếu tôi nâng cấp giữa chừng, dữ liệu có bị mất không?',
-    a: 'Không. Toàn bộ phòng học, quiz, ghi chú và hội thoại AI của bạn đều được giữ nguyên khi nâng cấp hoặc khi hết hạn Premium.',
+    q: 'Nếu tôi nâng cấp, dữ liệu có được giữ nguyên?',
+    a: 'Chắc chắn rồi. Toàn bộ phòng học, bài kiểm tra (quiz), và hội thoại AI của bạn đều được thiết lập lưu trữ an toàn trọn đời trên nền tảng đám mây.',
   },
   {
-    q: 'Premium khác gì so với Free?',
-    a: 'Premium mở khóa AI Chat không giới hạn, quiz nâng cao với 30 câu hỏi, Deep Explanation AI, Flashcard Mode, Analytics chi tiết, và xuất kết quả quiz.',
+    q: 'Premium thực sự mang lại giá trị cốt lõi gì?',
+    a: 'Ngoài sức mạnh của AI Tutor chuyên sâu, Premium nâng tầm năng suất tự học với giới hạn phòng học vô cực, hàng loạt bài kiểm tra đa dạng, và không giới hạn tương tác AI.',
   },
 ];
 

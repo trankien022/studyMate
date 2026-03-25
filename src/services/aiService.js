@@ -528,4 +528,155 @@ CHỈ TRẢ VỀ JSON OBJECT, KHÔNG CÓ MARKDOWN, KHÔNG CÓ BACKTICK.`;
   };
 };
 
-module.exports = { chat, summarize, generateQuiz, explainQuizAnswer, generateStudySuggestions, analyzeDocument, askAboutDocument, tutorChat, generateTutorSummary };
+// ─── Knowledge Map AI ───────────────────────────────────────
+
+/**
+ * Trích xuất khái niệm và mối quan hệ từ text để xây dựng Knowledge Map.
+ * @param {string} text - Nội dung text (từ documents, notes, quiz)
+ * @param {string} subject - Môn học / chủ đề
+ * @returns {Object} { nodes: [{id, label, description, category}], edges: [{source, target, label, strength}] }
+ */
+const extractKnowledgeNodes = async (text, subject) => {
+  const aiModel = getModel();
+
+  const truncatedText = text.length > 25000 ? text.substring(0, 25000) + '\n[... nội dung bị cắt bớt ...]' : text;
+
+  const prompt = `Bạn là chuyên gia phân tích kiến thức. Hãy trích xuất các khái niệm chính và mối quan hệ giữa chúng từ nội dung dưới đây.
+
+Môn học/Chủ đề: "${subject}"
+
+Nội dung:
+"""
+${truncatedText}
+"""
+
+Yêu cầu:
+1. Trích xuất 5-15 khái niệm/thuật ngữ quan trọng nhất
+2. Xác định mối quan hệ giữa các khái niệm (bao hàm, phụ thuộc, liên quan, ví dụ, nguyên nhân-kết quả)
+3. Phân loại mỗi khái niệm: concept (khái niệm), theory (lý thuyết), formula (công thức), definition (định nghĩa), example (ví dụ), application (ứng dụng)
+4. Mô tả ngắn gọn mỗi khái niệm (1-2 câu)
+
+Trả về ĐÚNG format JSON sau, KHÔNG thêm bất kỳ text nào khác:
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "label": "Tên khái niệm",
+      "description": "Mô tả ngắn gọn",
+      "category": "concept|theory|formula|definition|example|application"
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_1",
+      "target": "node_2",
+      "label": "mô tả mối quan hệ (VD: bao gồm, dẫn đến, là ví dụ của)",
+      "strength": 0.8
+    }
+  ]
+}
+
+QUAN TRỌNG:
+- Mỗi node phải có id duy nhất dạng "node_1", "node_2",...
+- source/target trong edges phải tham chiếu đúng id của nodes
+- strength từ 0 đến 1 (1 = quan hệ rất chặt)
+- Label edge ngắn gọn, dễ hiểu
+
+CHỈ TRẢ VỀ JSON OBJECT, KHÔNG CÓ MARKDOWN, KHÔNG CÓ BACKTICK.`;
+
+  const result = await aiModel.generateContent(prompt);
+  let responseText = result.response.text().trim();
+
+  // Loại bỏ markdown code block nếu AI vẫn thêm
+  responseText = responseText
+    .replace(/^```json?\s*/i, '')
+    .replace(/```\s*$/i, '')
+    .trim();
+
+  let data;
+  try {
+    data = JSON.parse(responseText);
+  } catch {
+    // Fallback nếu AI trả format không hợp lệ
+    return { nodes: [], edges: [] };
+  }
+
+  // Validate & sanitize
+  const nodes = Array.isArray(data.nodes) ? data.nodes.slice(0, 20).map((n, i) => ({
+    id: n.id || `node_${i + 1}`,
+    label: (n.label || `Khái niệm ${i + 1}`).substring(0, 100),
+    description: (n.description || '').substring(0, 500),
+    category: ['concept', 'theory', 'formula', 'definition', 'example', 'application'].includes(n.category)
+      ? n.category : 'concept',
+  })) : [];
+
+  const nodeIds = new Set(nodes.map(n => n.id));
+  const edges = Array.isArray(data.edges) ? data.edges.filter(e =>
+    nodeIds.has(e.source) && nodeIds.has(e.target) && e.source !== e.target
+  ).slice(0, 30).map(e => ({
+    source: e.source,
+    target: e.target,
+    label: (e.label || '').substring(0, 80),
+    strength: typeof e.strength === 'number' ? Math.max(0, Math.min(1, e.strength)) : 0.5,
+  })) : [];
+
+  return { nodes, edges };
+};
+
+/**
+ * Phân tích lỗ hổng kiến thức dựa trên quiz results và dữ liệu học tập.
+ * @param {Object} studyData - { quizResults, documents, subject, existingNodes }
+ * @returns {Array} gaps [{ topic, severity, suggestion }]
+ */
+const analyzeKnowledgeGaps = async (studyData) => {
+  const aiModel = getModel();
+
+  const prompt = `Bạn là chuyên gia phân tích học tập. Dựa trên dữ liệu dưới đây, hãy xác định các lỗ hổng kiến thức.
+
+Dữ liệu học tập:
+"""
+${JSON.stringify(studyData, null, 2)}
+"""
+
+Yêu cầu:
+1. Phân tích kết quả quiz để tìm chủ đề yếu (câu trả lời sai nhiều)
+2. So sánh với các khái niệm đã có trong Knowledge Map
+3. Xác định 3-7 lỗ hổng kiến thức quan trọng nhất
+4. Đề xuất cách khắc phục cụ thể cho mỗi lỗ hổng
+
+Trả về ĐÚNG format JSON sau:
+[
+  {
+    "topic": "Tên chủ đề/khái niệm bị yếu",
+    "severity": "high|medium|low",
+    "suggestion": "Gợi ý cách cải thiện cụ thể (dưới 150 ký tự)"
+  }
+]
+
+CHỈ TRẢ VỀ JSON ARRAY, KHÔNG CÓ MARKDOWN, KHÔNG CÓ BACKTICK.`;
+
+  const result = await aiModel.generateContent(prompt);
+  let responseText = result.response.text().trim();
+
+  responseText = responseText
+    .replace(/^```json?\s*/i, '')
+    .replace(/```\s*$/i, '')
+    .trim();
+
+  let gaps;
+  try {
+    gaps = JSON.parse(responseText);
+  } catch {
+    return [];
+  }
+
+  if (!Array.isArray(gaps)) return [];
+
+  return gaps.slice(0, 10).map(g => ({
+    topic: (g.topic || 'Chủ đề không xác định').substring(0, 100),
+    severity: ['high', 'medium', 'low'].includes(g.severity) ? g.severity : 'medium',
+    suggestion: (g.suggestion || '').substring(0, 200),
+  }));
+};
+
+module.exports = { chat, summarize, generateQuiz, explainQuizAnswer, generateStudySuggestions, analyzeDocument, askAboutDocument, tutorChat, generateTutorSummary, extractKnowledgeNodes, analyzeKnowledgeGaps };

@@ -179,4 +179,19 @@ export const tutorAPI = {
   getStats: () => api.get('/tutor/stats'),
 };
 
+/* ─── Knowledge Map (Bản đồ kiến thức AI) ──────────────── */
+export const knowledgeMapAPI = {
+  create: (data) => api.post('/knowledge-map', data),
+  getAll: (roomId) => {
+    const query = roomId ? `?roomId=${roomId}` : '';
+    return api.get(`/knowledge-map${query}`);
+  },
+  getDetail: (id) => api.get(`/knowledge-map/${id}`),
+  delete: (id) => api.delete(`/knowledge-map/${id}`),
+  generate: (id, data) => api.post(`/knowledge-map/${id}/generate`, data),
+  analyzeGaps: (id) => api.post(`/knowledge-map/${id}/analyze-gaps`),
+  updateNode: (id, data) => api.patch(`/knowledge-map/${id}/node`, data),
+  deleteNode: (id, nodeId) => api.delete(`/knowledge-map/${id}/node/${nodeId}`),
+};
+
 export default api;

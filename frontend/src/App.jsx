@@ -14,6 +14,7 @@ import PaymentReturnPage from './pages/Payment/PaymentReturnPage';
 import DirectMessagePage from './pages/DirectMessage/DirectMessagePage';
 import DiscoverPage from './pages/Discover/DiscoverPage';
 import AITutorPage from './pages/AITutor/AITutorPage';
+import KnowledgeMapPage from './pages/KnowledgeMap/KnowledgeMapPage';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -140,6 +141,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <AITutorPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/knowledge-map"
+        element={
+          <ProtectedRoute>
+            <KnowledgeMapPage />
           </ProtectedRoute>
         }
       />

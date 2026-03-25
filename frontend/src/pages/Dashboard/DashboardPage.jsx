@@ -8,7 +8,7 @@ import {
   Plus, Users, BookOpen, LogOut, Hash,
   ArrowRight, Clock, Search, UserPlus, Trash2, Settings,
   Crown, Layers, Pin, PinOff, SortAsc, ChevronDown,
-  Zap, Sparkles, RefreshCw, AlertCircle, MessageSquare, Award, Compass, GraduationCap
+  Zap, Sparkles, RefreshCw, AlertCircle, MessageSquare, Award, Compass, GraduationCap, Network
 } from 'lucide-react';
 import { BadgeSummary } from '../../components/BadgeShowcase/BadgeShowcase';
 import './Dashboard.css';
@@ -385,6 +385,15 @@ export default function DashboardPage() {
             >
               <GraduationCap size={17} />
               AI Tutor
+            </button>
+            <button
+              id="knowledge-map-btn"
+              className="btn btn-secondary"
+              onClick={() => navigate('/knowledge-map')}
+              title="Bản đồ kiến thức AI"
+            >
+              <Network size={17} />
+              Knowledge Map
             </button>
           </div>
         </section>
