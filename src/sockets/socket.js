@@ -12,9 +12,17 @@ const initSocket = (server) => {
   });
 
   io.on('connection', (socket) => {
-    console.log(`[Socket] Tách mới: ${socket.id}`);
+    console.log(`[Socket] Kết nối mới: ${socket.id}`);
 
-    // Join room event
+    // ─── Đăng ký user room cho notifications ──────────
+    socket.on('register_user', ({ userId }) => {
+      if (userId) {
+        socket.join(`user_${userId}`);
+        console.log(`[Socket] User ${userId} đã đăng ký nhận thông báo (${socket.id})`);
+      }
+    });
+
+    // ─── Join room event ──────────────────────────────
     socket.on('join_room', ({ roomId, user }) => {
       socket.join(roomId);
       console.log(`[Socket] User ${user?.name} (${socket.id}) vừa tham gia phòng ${roomId}`);
@@ -23,7 +31,7 @@ const initSocket = (server) => {
       socket.to(roomId).emit('member_joined', { user });
     });
 
-    // Leave room
+    // ─── Leave room ───────────────────────────────────
     socket.on('leave_room', ({ roomId, user }) => {
       socket.leave(roomId);
       console.log(`[Socket] User ${user?.name} (${socket.id}) rời khỏi phòng ${roomId}`);
@@ -31,16 +39,17 @@ const initSocket = (server) => {
       socket.to(roomId).emit('member_left', { user });
     });
 
-    // Update notes real-time (typing)
+    // ─── Update notes real-time ───────────────────────
     socket.on('update_notes', ({ roomId, notes, user }) => {
       socket.to(roomId).emit('notes_updated', { notes, user });
     });
 
-    // Receive chat message (if we have real chat later)
+    // ─── Chat message ─────────────────────────────────
     socket.on('chat_message', ({ roomId, message }) => {
       socket.to(roomId).emit('receive_message', message);
     });
 
+    // ─── Disconnect ───────────────────────────────────
     socket.on('disconnect', () => {
       console.log(`[Socket] Ngắt kết nối: ${socket.id}`);
     });

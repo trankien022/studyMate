@@ -18,6 +18,7 @@ import PomodoroTimer from './tabs/PomodoroTimer';
 import AnalyticsTab from './tabs/AnalyticsTab';
 import './Room.css';
 import '../Profile/Profile.css';
+import NotificationBell from '../../components/NotificationBell/NotificationBell';
 
 const TABS = [
   { id: 'group_chat', label: 'Nhóm', icon: MessageCircle },
@@ -64,6 +65,7 @@ export default function RoomPage() {
     socketService.connect();
     if (user) {
       socketService.joinRoom(id, user);
+      socketService.emit('register_user', { userId: user._id });
     }
 
     // Lắng nghe thay đổi thành viên trong phòng
@@ -180,6 +182,9 @@ export default function RoomPage() {
           <div className="room-title-info">
             <h1 className="room-name">{room.name}</h1>
             <span className="badge badge-primary-subtle">{room.subject}</span>
+          </div>
+          <div className="room-header-actions">
+            <NotificationBell />
           </div>
         </div>
 

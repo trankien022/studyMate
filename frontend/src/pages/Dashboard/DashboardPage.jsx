@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import './Dashboard.css';
 import '../Profile/Profile.css';
+import NotificationBell from '../../components/NotificationBell/NotificationBell';
 
 export default function DashboardPage() {
   const { user, logout, isPremium } = useAuth();
@@ -313,6 +314,7 @@ export default function DashboardPage() {
             <Crown size={15} />
             <span className="upgrade-text">{isPremium ? 'Xem gói' : 'Nâng cấp'}</span>
           </button>
+          <NotificationBell />
           <button
             id="logout-btn"
             className="btn btn-ghost btn-icon"

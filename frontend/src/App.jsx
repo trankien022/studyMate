@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import LoginPage from './pages/Auth/LoginPage';
 import RegisterPage from './pages/Auth/RegisterPage';
 import DashboardPage from './pages/Dashboard/DashboardPage';
@@ -117,14 +118,16 @@ export default function App() {
     <ThemeProvider>
       <BrowserRouter>
         <AuthProvider>
-          <Toaster position="top-right" toastOptions={{
-            style: {
-              background: 'var(--color-bg-card)',
-              color: 'var(--color-text-primary)',
-              border: '1px solid var(--color-border)'
-            }
-          }} />
-          <AppRoutes />
+          <NotificationProvider>
+            <Toaster position="top-right" toastOptions={{
+              style: {
+                background: 'var(--color-bg-card)',
+                color: 'var(--color-text-primary)',
+                border: '1px solid var(--color-border)'
+              }
+            }} />
+            <AppRoutes />
+          </NotificationProvider>
         </AuthProvider>
       </BrowserRouter>
     </ThemeProvider>

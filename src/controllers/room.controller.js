@@ -2,7 +2,9 @@ const Room = require('../models/Room');
 const Quiz = require('../models/Quiz');
 const QuizResult = require('../models/QuizResult');
 const Conversation = require('../models/Conversation');
+const Notification = require('../models/Notification');
 const checkRoomMembership = require('../middleware/checkMembership');
+const { createBulkNotifications, createNotification } = require('./notification.controller');
 
 /**
  * POST /api/rooms
@@ -153,6 +155,25 @@ const joinRoom = async (req, res) => {
   await room.populate('owner', 'name email avatar');
   await room.populate('members', 'name email avatar');
 
+  // 🔔 Thông báo cho các thành viên khác
+  const otherMembers = room.members
+    .filter(m => m._id.toString() !== req.user._id.toString())
+    .map(m => m._id);
+
+  if (otherMembers.length > 0) {
+    createBulkNotifications(otherMembers, {
+      type: 'member_joined',
+      title: 'Thành viên mới',
+      message: `${req.user.name} đã tham gia phòng "${room.name}"`,
+      link: `/room/${room._id}`,
+      metadata: {
+        roomId: room._id,
+        roomName: room.name,
+        actorName: req.user.name,
+      },
+    }).catch(err => console.error('[Notification] Error:', err.message));
+  }
+
   res.json({
     success: true,
     message: 'Tham gia phòng thành công',
@@ -224,6 +245,23 @@ const deleteRoom = async (req, res) => {
     });
   }
 
+  // 🔔 Thông báo cho các thành viên (trừ owner)
+  const otherMembers = room.members
+    .filter(mid => mid.toString() !== req.user._id.toString());
+
+  if (otherMembers.length > 0) {
+    createBulkNotifications(otherMembers, {
+      type: 'room_deleted',
+      title: 'Phòng đã bị xóa',
+      message: `Phòng "${room.name}" đã bị xóa bởi chủ phòng ${req.user.name}`,
+      link: '/dashboard',
+      metadata: {
+        roomName: room.name,
+        actorName: req.user.name,
+      },
+    }).catch(err => console.error('[Notification] Error:', err.message));
+  }
+
   // Xóa tất cả data liên quan
   const quizzes = await Quiz.find({ roomId: room._id });
   const quizIds = quizzes.map((q) => q._id);
@@ -232,6 +270,7 @@ const deleteRoom = async (req, res) => {
     Quiz.deleteMany({ roomId: room._id }),
     QuizResult.deleteMany({ quizId: { $in: quizIds } }),
     Conversation.deleteMany({ roomId: room._id }),
+    Notification.deleteMany({ 'metadata.roomId': room._id }),
     Room.findByIdAndDelete(room._id),
   ]);
 
@@ -246,7 +285,8 @@ const deleteRoom = async (req, res) => {
  * Rời phòng học (member rời, owner không được rời).
  */
 const leaveRoom = async (req, res) => {
-  const room = await Room.findById(req.params.id);
+  const room = await Room.findById(req.params.id)
+    .populate('members', 'name');
   if (!room) {
     return res.status(404).json({
       success: false,
@@ -256,7 +296,7 @@ const leaveRoom = async (req, res) => {
 
   // Kiểm tra có phải thành viên không
   const memberIndex = room.members.findIndex(
-    (memberId) => memberId.toString() === req.user._id.toString()
+    (member) => member._id.toString() === req.user._id.toString()
   );
   if (memberIndex === -1) {
     return res.status(400).json({
@@ -275,6 +315,25 @@ const leaveRoom = async (req, res) => {
 
   room.members.splice(memberIndex, 1);
   await room.save();
+
+  // 🔔 Thông báo cho các thành viên còn lại
+  const remainingMembers = room.members
+    .filter(m => m._id.toString() !== req.user._id.toString())
+    .map(m => m._id);
+
+  if (remainingMembers.length > 0) {
+    createBulkNotifications(remainingMembers, {
+      type: 'member_left',
+      title: 'Thành viên rời phòng',
+      message: `${req.user.name} đã rời khỏi phòng "${room.name}"`,
+      link: `/room/${room._id}`,
+      metadata: {
+        roomId: room._id,
+        roomName: room.name,
+        actorName: req.user.name,
+      },
+    }).catch(err => console.error('[Notification] Error:', err.message));
+  }
 
   res.json({
     success: true,
@@ -326,6 +385,19 @@ const kickMember = async (req, res) => {
 
   room.members.splice(memberIndex, 1);
   await room.save();
+
+  // 🔔 Thông báo cho người bị kick
+  createNotification({
+    userId: memberId,
+    type: 'member_kicked',
+    title: 'Bị đuổi khỏi phòng',
+    message: `Bạn đã bị đuổi khỏi phòng "${room.name}" bởi chủ phòng`,
+    link: '/dashboard',
+    metadata: {
+      roomName: room.name,
+      actorName: req.user.name,
+    },
+  }).catch(err => console.error('[Notification] Error:', err.message));
 
   res.json({
     success: true,
@@ -384,6 +456,20 @@ const transferOwnership = async (req, res) => {
 
   room.owner = newOwnerId;
   await room.save();
+
+  // 🔔 Thông báo cho chủ phòng mới
+  createNotification({
+    userId: newOwnerId,
+    type: 'ownership_transfer',
+    title: 'Bạn là chủ phòng mới!',
+    message: `${req.user.name} đã chuyển quyền chủ phòng "${room.name}" cho bạn`,
+    link: `/room/${room._id}`,
+    metadata: {
+      roomId: room._id,
+      roomName: room.name,
+      actorName: req.user.name,
+    },
+  }).catch(err => console.error('[Notification] Error:', err.message));
 
   res.json({
     success: true,

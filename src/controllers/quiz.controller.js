@@ -1,8 +1,10 @@
 const Quiz = require('../models/Quiz');
 const QuizResult = require('../models/QuizResult');
+const Room = require('../models/Room');
 const checkRoomMembership = require('../middleware/checkMembership');
 const aiService = require('../services/aiService');
 const { getIO } = require('../sockets/socket');
+const { createBulkNotifications } = require('./notification.controller');
 
 /**
  * POST /api/quiz/generate
@@ -44,7 +46,7 @@ const generateQuiz = async (req, res) => {
     createdBy: req.user._id,
   });
 
-  // Thông báo qua socket
+  // Thông báo qua socket (legacy)
   try {
     const io = getIO();
     io.to(roomId.toString()).emit('quiz_created', { 
@@ -53,6 +55,32 @@ const generateQuiz = async (req, res) => {
     });
   } catch (err) {
     console.error('Socket emit error:', err);
+  }
+
+  // 🔔 Gửi notification cho các thành viên (trừ người tạo)
+  try {
+    const room = await Room.findById(roomId);
+    if (room) {
+      const otherMembers = room.members
+        .filter(mid => mid.toString() !== req.user._id.toString());
+
+      if (otherMembers.length > 0) {
+        createBulkNotifications(otherMembers, {
+          type: 'quiz_created',
+          title: 'Quiz mới!',
+          message: `${req.user.name} đã tạo quiz "${topic}" (${questions.length} câu) trong phòng "${room.name}"`,
+          link: `/room/${roomId}`,
+          metadata: {
+            roomId: room._id,
+            roomName: room.name,
+            quizId: quiz._id,
+            actorName: req.user.name,
+          },
+        }).catch(err => console.error('[Notification] Error:', err.message));
+      }
+    }
+  } catch (err) {
+    console.error('[Notification] Quiz notification error:', err.message);
   }
 
   res.status(201).json({

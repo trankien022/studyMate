@@ -39,6 +39,13 @@
   border-bottom: 1px solid var(--color-border);
 }
 
+.room-header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
 .btn-icon-round {
   border-radius: var(--radius-full);
   width: 36px;
